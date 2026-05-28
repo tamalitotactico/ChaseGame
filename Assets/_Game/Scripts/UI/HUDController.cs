@@ -1,0 +1,102 @@
+using TMPro;
+using UnityEngine;
+
+/// <summary>
+/// HUD principal de partida. Lee eventos del EventBus para actualizarse;
+/// solo identifica al jugador local detectando PlayerBrain en el spawned event.
+///
+/// Phase 3: en multi-cliente cada cliente solo bindea con su propio Character.
+/// </summary>
+public class HUDController : MonoBehaviour
+{
+    [Header("Health (jugador local)")]
+    [SerializeField] GameObject[] heartIcons;
+
+    [Header("Timer")]
+    [SerializeField] TextMeshProUGUI timerText;
+
+    [Header("Countdown")]
+    [SerializeField] GameObject countdownPanel;
+    [SerializeField] TextMeshProUGUI countdownText;
+
+    [Header("Result")]
+    [SerializeField] GameObject resultPanel;
+    [SerializeField] TextMeshProUGUI resultText;
+
+    Character _player;
+
+    void OnEnable()
+    {
+        EventBus.Subscribe<CharacterSpawnedEvent>(OnSpawned);
+        EventBus.Subscribe<CharacterDamagedEvent>(OnDamaged);
+        EventBus.Subscribe<MatchTimerTickEvent>(OnTimer);
+        EventBus.Subscribe<CountdownTickEvent>(OnCountdown);
+        EventBus.Subscribe<MatchStartedEvent>(OnMatchStarted);
+        EventBus.Subscribe<MatchEndedEvent>(OnMatchEnded);
+
+        if (resultPanel != null) resultPanel.SetActive(false);
+        if (countdownPanel != null) countdownPanel.SetActive(false);
+    }
+
+    void OnDisable()
+    {
+        EventBus.Unsubscribe<CharacterSpawnedEvent>(OnSpawned);
+        EventBus.Unsubscribe<CharacterDamagedEvent>(OnDamaged);
+        EventBus.Unsubscribe<MatchTimerTickEvent>(OnTimer);
+        EventBus.Unsubscribe<CountdownTickEvent>(OnCountdown);
+        EventBus.Unsubscribe<MatchStartedEvent>(OnMatchStarted);
+        EventBus.Unsubscribe<MatchEndedEvent>(OnMatchEnded);
+    }
+
+    void OnSpawned(CharacterSpawnedEvent e)
+    {
+        if (e.Character == null) return;
+        if (e.Character.GetComponent<PlayerBrain>() == null) return;
+        _player = e.Character;
+        UpdateHearts(_player.Health.CurrentHealth, _player.Health.MaxHealth);
+    }
+
+    void OnDamaged(CharacterDamagedEvent e)
+    {
+        if (e.Character != _player) return;
+        UpdateHearts(e.CurrentHealth, e.MaxHealth);
+    }
+
+    void UpdateHearts(int current, int max)
+    {
+        if (heartIcons == null) return;
+        for (int i = 0; i < heartIcons.Length; i++)
+        {
+            if (heartIcons[i] == null) continue;
+            heartIcons[i].SetActive(i < current);
+        }
+    }
+
+    void OnTimer(MatchTimerTickEvent e)
+    {
+        if (timerText == null) return;
+        int total = Mathf.Max(0, Mathf.CeilToInt(e.SecondsRemaining));
+        int m = total / 60;
+        int s = total % 60;
+        timerText.text = $"{m:00}:{s:00}";
+    }
+
+    void OnCountdown(CountdownTickEvent e)
+    {
+        if (countdownPanel != null) countdownPanel.SetActive(e.SecondsLeft > 0);
+        if (countdownText != null) countdownText.text = e.SecondsLeft > 0 ? e.SecondsLeft.ToString() : "GO!";
+    }
+
+    void OnMatchStarted(MatchStartedEvent _)
+    {
+        if (countdownPanel != null) countdownPanel.SetActive(false);
+    }
+
+    void OnMatchEnded(MatchEndedEvent e)
+    {
+        if (resultPanel != null) resultPanel.SetActive(true);
+        if (resultText == null) return;
+        bool playerWon = _player != null && _player.Team == e.WinningTeam;
+        resultText.text = (playerWon ? "VICTORY" : "DEFEAT") + "\n" + e.Reason;
+    }
+}

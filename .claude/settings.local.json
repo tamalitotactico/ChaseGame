@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(1..6 | ForEach-Object { [guid]::NewGuid\\(\\).ToString\\(\"N\"\\) })",
+      "mcp__unity-mcp__Unity_RunCommand",
+      "mcp__unity-mcp__Unity_SceneView_Capture2DScene",
+      "mcp__unity-mcp__Unity_GetConsoleLogs",
+      "Bash(Get-ChildItem -Path \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\\\\Assets\\\\_Game\\\\Scripts\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\" -Recurse -Directory)",
+      "Bash(Select-Object -First 30)",
+      "Bash(Format-Table FullName)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\\\\Assets\\\\_Game\" -Recurse -Directory | ForEach-Object { $_.FullName } | Sort-Object)",
+      "mcp__unity-mcp__Unity_Camera_Capture",
+      "Bash(Select-Object -First 20)",
+      "Bash(Format-List FullName)",
+      "Bash(Get-ChildItem -Path \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(xargs grep -l \"Utility\\\\|decision\\\\|score\")",
+      "Bash(ls -la \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\\\\\" | head -20)",
+      "Read(//d/UnityGameDevelopment/UnityGames/**)",
+      "Bash(Get-ChildItem -Recurse -Filter \"*.cs\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\\\\Assets\\\\_Game\\\\Scripts\" -Recurse -Name)",
+      "Bash(xargs grep -l \"Canvas\\\\|WorldSpace\\\\|Billboard\\\\|Overhead\\\\|LateUpdate\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\\\\Assets\\\\_Game\\\\Scripts\\\\\" -Recurse -Filter \"*.cs\" | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(Get-ChildItem -Path \"D:\\\\UnityGameDevelopment\\\\UnityGames\\\\Corre que te atrapan\" -Directory)",
+      "Bash(grep -o \"m_Name: [^$]*\" \"D:/UnityGameDevelopment/UnityGames/Corre que te atrapan/Assets/_Game/Scenes/00_Sandbox_TilesetTEST.unity\")",
+      "Bash(find \"d:\\\\\\\\UnityGameDevelopment\\\\\\\\UnityGames\\\\\\\\Corre que te atrapan\\\\\\\\Assets\\\\\\\\_Game\\\\\\\\Scripts\\\\\\\\\" -type f -name \"*.cs\")"
+    ]
+  }
+}
