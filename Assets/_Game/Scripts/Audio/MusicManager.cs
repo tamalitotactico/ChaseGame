@@ -31,7 +31,10 @@ public class MusicManager : MonoBehaviour, IMusicService
 
     void OnDestroy()
     {
-        ServiceLocator.Unregister<IMusicService>();
+        // Solo desregistrar si seguimos siendo el servicio activo (ver nota en AudioManager):
+        // tras recargar la escena el nuevo MusicManager ya se registro en su Awake.
+        if (ReferenceEquals(ServiceLocator.Resolve<IMusicService>(), this))
+            ServiceLocator.Unregister<IMusicService>();
     }
 
     AudioSource CreateSource(string name)

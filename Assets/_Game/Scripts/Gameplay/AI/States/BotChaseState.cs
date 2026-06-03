@@ -176,9 +176,9 @@ public class BotChaseState : IBotState
             case TargetCondition.TargetIsolated:
             {
                 float r2 = bot.Tuning.targetIsolationRadius * bot.Tuning.targetIsolationRadius;
-                var gm = GameManager.Instance;
-                if (gm == null) return true;
-                var allies = target.Team == CharacterTeam.Hunter ? gm.Hunters : gm.Preys;
+                var world = ServiceLocator.Resolve<IWorldQueryService>();
+                if (world == null) return true;
+                var allies = world.GetTeam(target.Team);
                 if (allies == null) return true;
                 for (int i = 0; i < allies.Count; i++)
                 {

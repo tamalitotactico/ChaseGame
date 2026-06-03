@@ -37,6 +37,15 @@ public class BotBrain : MonoBehaviour, IBrain
     /// <summary>Target downed teammate que este bot esta yendo a revivir.</summary>
     public Character ReviveTarget { get; set; }
 
+    // true si el tuning fue creado en runtime (fallback) y por tanto este componente
+    // es responsable de destruirlo en OnDestroy para no filtrar el ScriptableObject.
+    bool _ownsTuning;
+
+    // Consulta del mundo (listas por bando) desacoplada de GameManager.Instance.
+    // Cacheada: el servicio se registra en GameManager.Awake antes de spawnear bots.
+    IWorldQueryService _world;
+    IWorldQueryService World => _world ??= ServiceLocator.Resolve<IWorldQueryService>();
+
     void Awake()
     {
         if (self == null) self = GetComponent<Character>();
@@ -48,6 +57,18 @@ public class BotBrain : MonoBehaviour, IBrain
             Debug.LogWarning($"[BotBrain] {name} sin BotTuningData asignado. Creando instance default en runtime. " +
                              "Asigna un asset al prefab para tunear desde inspector.", this);
             tuning = ScriptableObject.CreateInstance<BotTuningData>();
+            _ownsTuning = true;
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Solo destruimos el tuning si lo creamos nosotros (fallback). Un asset
+        // asignado desde el inspector es compartido y NO debe destruirse.
+        if (_ownsTuning && tuning != null)
+        {
+            Destroy(tuning);
+            tuning = null;
         }
     }
 
@@ -81,11 +102,9 @@ public class BotBrain : MonoBehaviour, IBrain
     public Character FindNearestVisibleEnemy()
     {
         if (self == null) return null;
-        var gm = GameManager.Instance;
-        var list = gm != null
-            ? (self.Team == CharacterTeam.Hunter ? gm.Preys : gm.Hunters)
-            : null;
-        if (list == null) return null;
+        var world = World;
+        if (world == null) return null;
+        var list = world.GetEnemiesOf(self.Team);
 
         Character best = null;
         float bestScore = float.MinValue;
@@ -94,8 +113,8 @@ public class BotBrain : MonoBehaviour, IBrain
         Vector2 myPos = Position;
 
         // Para evaluar aislamiento necesitamos la lista de aliados del target.
-        // En Phase 1 hay solo un Hunter, asi que solo Prey-aislamiento es relevante practicamente.
-        var allyListForTarget = self.Team == CharacterTeam.Hunter ? gm.Preys : gm.Hunters;
+        // El target es enemigo de self, asi que sus aliados son el mismo bando enemigo.
+        var allyListForTarget = list;
 
         foreach (var c in list)
         {
@@ -130,7 +149,7 @@ public class BotBrain : MonoBehaviour, IBrain
         return best;
     }
 
-    static bool IsIsolated(Character target, System.Collections.Generic.List<Character> allies, float isoSqr)
+    static bool IsIsolated(Character target, System.Collections.Generic.IReadOnlyList<Character> allies, float isoSqr)
     {
         if (allies == null) return true;
         Vector2 tp = target.transform.position;
@@ -150,14 +169,14 @@ public class BotBrain : MonoBehaviour, IBrain
     public Character FindNearestDownedAlly()
     {
         if (self == null || self.Team != CharacterTeam.Prey) return null;
-        var gm = GameManager.Instance;
-        if (gm == null) return null;
+        var world = World;
+        if (world == null) return null;
 
         Character closest = null;
         float minSqr = float.MaxValue;
         float visSqr = tuning.visionRange * tuning.visionRange;
         Vector2 myPos = Position;
-        foreach (var c in gm.Preys)
+        foreach (var c in world.GetAlliesOf(self.Team))
         {
             if (c == null || c == self || !c.IsDowned) continue;
             Vector2 cp = c.transform.position;

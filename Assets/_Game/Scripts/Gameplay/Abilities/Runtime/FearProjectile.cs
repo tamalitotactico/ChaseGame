@@ -23,6 +23,12 @@ public class FearProjectile : MonoBehaviour
     float     _slowMultiplier;
     Character _owner;
     AudioCue  _sfxOnHit;
+    Rigidbody2D _rb;
+
+    void Awake()
+    {
+        _rb = GetComponent<Rigidbody2D>();
+    }
 
     public void Init(Vector2 direction, float speed, float range, Character target,
                      bool homing, float turnRateDeg,
@@ -43,25 +49,28 @@ public class FearProjectile : MonoBehaviour
         _sfxOnHit       = sfxOnHit;
     }
 
-    void Update()
+    // Movimiento + homing en FixedUpdate via MovePosition (consistencia con fisica 2D).
+    void FixedUpdate()
     {
+        float dt = Time.fixedDeltaTime;
+
         // Homing: curvar hacia target si esta vivo y existe
         if (_homing && _target != null && _target.IsAlive)
         {
-            Vector2 toTarget = ((Vector2)_target.transform.position - (Vector2)transform.position);
+            Vector2 toTarget = ((Vector2)_target.transform.position - _rb.position);
             if (toTarget.sqrMagnitude > 0.0001f)
             {
                 Vector2 desiredDir = toTarget.normalized;
                 float deltaAngleRad = Mathf.Deg2Rad * Vector2.SignedAngle(_direction, desiredDir);
-                float maxStep       = _turnRateRad * Time.deltaTime;
+                float maxStep       = _turnRateRad * dt;
                 float step          = Mathf.Clamp(deltaAngleRad, -maxStep, maxStep);
                 _direction = Rotate(_direction, step);
                 transform.rotation = Quaternion.FromToRotation(Vector3.right, _direction);
             }
         }
 
-        Vector2 delta = _direction * (_speed * Time.deltaTime);
-        transform.position += (Vector3)delta;
+        Vector2 delta = _direction * (_speed * dt);
+        _rb.MovePosition(_rb.position + delta);
         _traveled += delta.magnitude;
         if (_traveled >= _maxRange)
             Destroy(gameObject);
@@ -72,7 +81,7 @@ public class FearProjectile : MonoBehaviour
         if (_owner != null && other.gameObject == _owner.gameObject) return;
 
         // Wall layer: destruir
-        if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))
+        if (other.gameObject.layer == GameLayers.Wall)
         {
             Destroy(gameObject);
             return;

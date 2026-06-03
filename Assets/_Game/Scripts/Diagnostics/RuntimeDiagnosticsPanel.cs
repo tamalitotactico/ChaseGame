@@ -28,6 +28,7 @@ public class RuntimeDiagnosticsPanel : MonoBehaviour
     GUIStyle _box;
     GUIStyle _label;
     GUIStyle _header;
+    Texture2D _bgTex; // fondo 1x1 del _box; se destruye en OnDestroy para no filtrarlo
 
     // Mobile triple-tap state
     int   _tapCount;
@@ -52,6 +53,7 @@ public class RuntimeDiagnosticsPanel : MonoBehaviour
     void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        if (_bgTex != null) { Destroy(_bgTex); _bgTex = null; }
     }
 
     void Update()
@@ -223,10 +225,10 @@ public class RuntimeDiagnosticsPanel : MonoBehaviour
         if (_box == null)
         {
             _box = new GUIStyle(GUI.skin.box);
-            var tex = new Texture2D(1, 1);
-            tex.SetPixel(0, 0, new Color(0, 0, 0, 0.85f));
-            tex.Apply();
-            _box.normal.background = tex;
+            _bgTex = new Texture2D(1, 1);
+            _bgTex.SetPixel(0, 0, new Color(0, 0, 0, 0.85f));
+            _bgTex.Apply();
+            _box.normal.background = _bgTex;
         }
         if (_label == null)
         {

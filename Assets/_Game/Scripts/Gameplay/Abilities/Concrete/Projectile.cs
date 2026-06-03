@@ -16,6 +16,12 @@ public class Projectile : MonoBehaviour
     int       _damage;
     Character _owner;
     AudioCue  _sfxOnHit;
+    Rigidbody2D _rb;
+
+    void Awake()
+    {
+        _rb = GetComponent<Rigidbody2D>();
+    }
 
     public void Init(Vector2 direction, float speed, float range, int damage, Character owner, AudioCue sfxOnHit = null)
     {
@@ -28,10 +34,13 @@ public class Projectile : MonoBehaviour
         _sfxOnHit  = sfxOnHit;
     }
 
-    void Update()
+    // Movimiento en FixedUpdate via MovePosition para mantener consistencia con el
+    // pipeline de fisica 2D (evita el desfase transform/RB que causa tunneling a
+    // alta velocidad y triggers perdidos).
+    void FixedUpdate()
     {
-        Vector2 step = _direction * (_speed * Time.deltaTime);
-        transform.position += (Vector3)step;
+        Vector2 step = _direction * (_speed * Time.fixedDeltaTime);
+        _rb.MovePosition(_rb.position + step);
         _traveled += step.magnitude;
         if (_traveled >= _maxRange)
             Destroy(gameObject);
@@ -56,7 +65,7 @@ public class Projectile : MonoBehaviour
         }
 
         // Wall layer: destruir
-        if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))
+        if (other.gameObject.layer == GameLayers.Wall)
         {
             ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_sfxOnHit, transform.position);
             Destroy(gameObject);

@@ -16,6 +16,21 @@ public interface IAudioService
     AudioHandle PlayAtPoint(AudioCue cue, Vector2 worldPosition);
 
     /// <summary>
+    /// Reproduce un AudioCue que SIGUE a un Transform: el source se reposiciona sobre
+    /// el objeto cada frame mientras dura el clip. Para sonidos emitidos por el hunter,
+    /// proyectil u otro objeto en movimiento. El source es del pool y NO se parenta, asi
+    /// que destruir el objeto no corrompe el pool; si el objeto desaparece, el sonido se detiene.
+    /// </summary>
+    AudioHandle PlayAttached(AudioCue cue, Transform follow);
+
+    /// <summary>
+    /// Reproduce un AudioCue en 2D GLOBAL (spatialBlend=0): se escucha en todo el mapa al
+    /// mismo volumen, ignorando cue.spatial. Para taunts/anuncios que todos deben oir
+    /// (ej. la risa del hunter al derribar un prey).
+    /// </summary>
+    AudioHandle PlayGlobal(AudioCue cue);
+
+    /// <summary>
     /// Detiene un sonido obtenido por PlayAtPoint antes de que termine.
     /// Util para loops (cue.loop = true) adjuntos a habilidades o efectos.
     /// </summary>

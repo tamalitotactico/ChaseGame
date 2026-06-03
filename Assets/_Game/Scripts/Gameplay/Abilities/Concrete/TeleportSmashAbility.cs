@@ -30,7 +30,9 @@ public class TeleportSmashAbility : Ability
     // Se llama en el frame exacto en que el aimer pasa a fase de canalizacion.
     public override void OnCastingBegan(in AbilityContext ctx)
     {
-        ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_d.sfxOnCastStart, ctx.OwnerPosition);
+        // Groar pre-TP: sigue al hunter (aunque esta inmovil durante el canalizado).
+        if (ctx.Owner != null)
+            ServiceLocator.Resolve<IAudioService>()?.PlayAttached(_d.sfxOnCastStart, ctx.Owner.transform);
     }
 
     public override void Tick(float dt)

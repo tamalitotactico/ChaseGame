@@ -10,7 +10,9 @@ public class SlowedEffect : StatusEffect
 {
     readonly float _multiplier;
 
-    public override float SpeedModifier => _multiplier;
+    public override float SpeedModifier  => _multiplier;
+    public override Color VisualTint     => new Color(0.25f, 0.55f, 1f, 0.45f);
+    public override int   VisualPriority => 10;
 
     /// <param name="duration">Duracion en segundos.</param>
     /// <param name="speedMultiplier">Fraccion de la velocidad base [0..1]. Default 0.45 = 45%.</param>

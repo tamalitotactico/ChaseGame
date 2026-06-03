@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// HUD principal de partida. Lee eventos del EventBus para actualizarse;
@@ -22,8 +23,19 @@ public class HUDController : MonoBehaviour
     [Header("Result")]
     [SerializeField] GameObject resultPanel;
     [SerializeField] TextMeshProUGUI resultText;
+    [Tooltip("Boton para rejugar con la misma config (recarga la escena).")]
+    [SerializeField] Button rematchButton;
+    [Tooltip("Boton para volver al lobby (recarga la escena y muestra seleccion de rol).")]
+    [SerializeField] Button lobbyButton;
 
     Character _player;
+
+    void Awake()
+    {
+        // Listeners una sola vez (no en OnEnable para no apilarlos).
+        if (rematchButton != null) rematchButton.onClick.AddListener(() => GameManager.Instance?.Rematch());
+        if (lobbyButton   != null) lobbyButton.onClick.AddListener(()   => GameManager.Instance?.ReturnToLobby());
+    }
 
     void OnEnable()
     {

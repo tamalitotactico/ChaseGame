@@ -35,10 +35,7 @@ public class ArrowIndicator : AimIndicator
     {
         if (arrowSprite == null) arrowSprite = GetComponentInChildren<SpriteRenderer>();
         if (detectWalls && wallMask.value == -1)
-        {
-            int wall = LayerMask.NameToLayer("Wall");
-            wallMask = wall >= 0 ? (1 << wall) : 0;
-        }
+            wallMask = GameLayers.WallMask;
     }
 
     public override void Begin(Character owner, AbilityData data)

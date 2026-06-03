@@ -126,7 +126,7 @@ public class AbilityController : MonoBehaviour
 
         var aimStartCue = _runtime[slot].Data.sfxOnAimStart;
         if (aimStartCue != null)
-            ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(aimStartCue, _character.transform.position);
+            ServiceLocator.Resolve<IAudioService>()?.PlayAttached(aimStartCue, _character.transform);
     }
 
     void DriveAim(in BrainIntent intent)
@@ -207,7 +207,7 @@ public class AbilityController : MonoBehaviour
 
         var castCue = _runtime[slot].Data.sfxOnCast;
         if (castCue != null)
-            ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(castCue, _character.transform.position);
+            ServiceLocator.Resolve<IAudioService>()?.PlayAttached(castCue, _character.transform);
 
         _runtime[slot].Execute(in ctx, in aim);
         _runtime[slot].StartCooldown();

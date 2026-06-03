@@ -26,6 +26,16 @@ public abstract class StatusEffect
     /// </summary>
     public virtual System.Nullable<UnityEngine.Vector2> ForceMoveInput => null;
 
+    /// <summary>
+    /// Tint de overlay que el efecto pinta sobre el sprite (shader Game/CharacterEffect).
+    /// Alpha 0 = sin tint. CharacterVisuals elige el de mayor VisualPriority entre los
+    /// efectos activos, sin necesitar conocer los tipos concretos (OCP).
+    /// </summary>
+    public virtual Color VisualTint => new Color(0f, 0f, 0f, 0f);
+
+    /// <summary>Prioridad del tint cuando hay varios efectos activos. Mayor gana.</summary>
+    public virtual int VisualPriority => 0;
+
     /// <summary>Llamado una vez cuando el efecto se aplica al personaje.</summary>
     public abstract void OnApply(Character target);
 

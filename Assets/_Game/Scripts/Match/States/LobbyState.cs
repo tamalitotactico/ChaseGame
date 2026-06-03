@@ -4,7 +4,7 @@
 /// </summary>
 public class LobbyState : IMatchState
 {
-    public void Enter(GameManager gm) { }
+    public void Enter(GameManager gm) => EventBus.Publish(new LobbyEnteredEvent());
     public void Tick(GameManager gm, float dt) { }
-    public void Exit(GameManager gm) { }
+    public void Exit(GameManager gm) => EventBus.Publish(new LobbyExitedEvent());
 }

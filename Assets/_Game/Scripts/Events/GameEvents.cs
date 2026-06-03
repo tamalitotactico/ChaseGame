@@ -61,6 +61,12 @@ public struct MatchStateChangedEvent
     public string To;
 }
 
+/// <summary>El match entro a LobbyState. La UI de lobby se muestra.</summary>
+public struct LobbyEnteredEvent { }
+
+/// <summary>El match salio de LobbyState (empezo la partida). La UI de lobby se oculta.</summary>
+public struct LobbyExitedEvent { }
+
 public struct MatchStartedEvent { }
 
 public struct MatchEndedEvent

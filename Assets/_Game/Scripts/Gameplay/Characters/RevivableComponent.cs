@@ -94,13 +94,13 @@ public class RevivableComponent : MonoBehaviour
 
     bool HasAnyReviverInRange()
     {
-        var gm = GameManager.Instance;
-        if (gm == null || _character == null) return false;
+        var world = ServiceLocator.Resolve<IWorldQueryService>();
+        if (world == null || _character == null) return false;
         float r2 = reviveProximityRadius * reviveProximityRadius;
         Vector2 my = _character.transform.position;
 
         // El reviver debe ser otro Prey, vivo (no downed, no dead).
-        foreach (var c in gm.Preys)
+        foreach (var c in world.GetAlliesOf(_character.Team))
         {
             if (c == null || c == _character) continue;
             if (!c.IsAlive || c.IsDowned) continue;

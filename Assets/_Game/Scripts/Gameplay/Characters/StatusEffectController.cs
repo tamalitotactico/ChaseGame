@@ -61,6 +61,23 @@ public class StatusEffectController : MonoBehaviour
     }
 
     /// <summary>
+    /// Tint de overlay del efecto activo con mayor VisualPriority (alpha > 0).
+    /// Transparente si ningun efecto pinta. Usado por CharacterVisuals: reemplaza el
+    /// switch por tipo, permitiendo agregar efectos nuevos sin tocar CharacterVisuals.
+    /// </summary>
+    public Color GetTopVisualTint()
+    {
+        StatusEffect top = null;
+        for (int i = 0; i < _active.Count; i++)
+        {
+            var e = _active[i];
+            if (e.VisualTint.a <= 0f) continue;
+            if (top == null || e.VisualPriority > top.VisualPriority) top = e;
+        }
+        return top != null ? top.VisualTint : new Color(0f, 0f, 0f, 0f);
+    }
+
+    /// <summary>
     /// Devuelve el primer ForceMoveInput no-null de los efectos activos, o null si ninguno
     /// sobreescribe el input. En la practica solo FearedEffect lo usa.
     /// </summary>

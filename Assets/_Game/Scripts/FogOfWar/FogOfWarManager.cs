@@ -194,7 +194,13 @@ public class FogOfWarManager : MonoBehaviour
         if (_primarySource == null) return;
 
         _rebuildTimer += Time.deltaTime;
-        bool rebuild = updateInterval <= 0f || _rebuildTimer >= updateInterval;
+        float interval = updateInterval;
+#if UNITY_ANDROID || UNITY_IOS
+        // En mobile forzamos un minimo para no rebuildear el FoW (rayCount raycasts)
+        // cada frame: a 60 FPS eso son miles de raycasts/seg. 0.05 = 20 rebuilds/seg.
+        if (interval < 0.05f) interval = 0.05f;
+#endif
+        bool rebuild = interval <= 0f || _rebuildTimer >= interval;
         if (rebuild)
         {
             _rebuildTimer = 0f;

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Glue de la escena de partida. Posee:
@@ -73,19 +74,71 @@ public class GameManager : MonoBehaviour
         Instance = this;
         ServiceLocator.Register<ISpawnService>(new LocalSpawnService());
         ServiceLocator.Register<IAuthorityContext>(LocalAuthority.Instance);
+        ServiceLocator.Register<IWorldQueryService>(new LocalWorldQuery(this));
         States = new MatchStateMachine(this);
     }
 
     void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        // CRITICO para el loop (rematch/lobby): al recargar la escena, el Awake de la
+        // NUEVA GameManager corre ANTES de este OnDestroy y ya re-registro servicios y
+        // re-suscribio eventos. Si limpiaramos incondicionalmente, borrariamos ese estado
+        // nuevo -> la partida recargada queda injugable. Solo limpiamos si seguimos siendo
+        // la instancia activa (no fuimos reemplazados).
+        if (Instance != this) return;
+        Instance = null;
         EventBus.Clear();
         ServiceLocator.Clear();
     }
 
     void Start()
     {
-        States.ChangeState(autoStart ? (IMatchState)new StartingState() : new LobbyState());
+        // MatchConfig sobrevive al reload de escena (rematch/lobby). Si esta configurado,
+        // arrancamos directo con el rol elegido; si no, mostramos el lobby.
+        if (MatchConfig.Configured)
+        {
+            playerTeam = MatchConfig.PlayerTeam;
+            States.ChangeState(new StartingState());
+        }
+        else if (autoStart)
+        {
+            States.ChangeState(new StartingState());
+        }
+        else
+        {
+            States.ChangeState(new LobbyState());
+        }
+    }
+
+    /// <summary>Llamado por el LobbyPanel al elegir rol. Fija MatchConfig y arranca la partida.</summary>
+    public void StartMatch(CharacterTeam team)
+    {
+        MatchConfig.PlayerTeam = team;
+        MatchConfig.Configured = true;
+        playerTeam = team;
+        States.ChangeState(new StartingState());
+    }
+
+    /// <summary>Rejugar con la misma config: recarga la escena (reset limpio) conservando el rol.</summary>
+    public void Rematch()
+    {
+        MatchConfig.Configured = true;
+        ReloadActiveScene();
+    }
+
+    /// <summary>Volver al lobby: recarga la escena y muestra el lobby para re-elegir rol.</summary>
+    public void ReturnToLobby()
+    {
+        MatchConfig.Configured = false;
+        ReloadActiveScene();
+    }
+
+    static void ReloadActiveScene()
+    {
+        // Reset limpio: al destruirse, GameManager.OnDestroy hace EventBus.Clear()
+        // + ServiceLocator.Clear(); todos los managers (scene-scoped) se recrean.
+        var scene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(scene.buildIndex);
     }
 
     void Update()

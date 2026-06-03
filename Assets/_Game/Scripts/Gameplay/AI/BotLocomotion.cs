@@ -74,10 +74,7 @@ public class BotLocomotion : MonoBehaviour
         // El default ~0 (Everything) rompe LOS porque el raycast pega en el propio
         // collider del bot, suelo, etc. Resolver a la capa "Wall" si existe.
         if (wallLayer.value == -1)
-        {
-            int wall = LayerMask.NameToLayer("Wall");
-            wallLayer = wall >= 0 ? (1 << wall) : 0;
-        }
+            wallLayer = GameLayers.WallMask;
 
         _stuckCheckPos = transform.position;
     }

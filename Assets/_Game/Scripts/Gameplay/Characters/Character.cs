@@ -84,7 +84,8 @@ public abstract class Character : MonoBehaviour, IDamageable
     {
         if (!Authority.CanSimulate)
         {
-            MovementTrace.Log("Authority", "{0} CanSimulate=false, skipping Update", name);
+            if (MovementTrace.Enabled)
+                MovementTrace.Log("Authority", "{0} CanSimulate=false, skipping Update", name);
             return;
         }
 
@@ -103,13 +104,15 @@ public abstract class Character : MonoBehaviour, IDamageable
         }
 
         BrainIntent intent = _brain != null ? _brain.CaptureIntent() : default;
-        MovementTrace.Log("Character", "{0} brain={1} intent=({2:F2},{3:F2})",
-            name, _brain != null ? _brain.GetType().Name : "null",
-            intent.MoveInput.x, intent.MoveInput.y);
+        if (MovementTrace.Enabled)
+            MovementTrace.Log("Character", "{0} brain={1} intent=({2:F2},{3:F2})",
+                name, _brain != null ? _brain.GetType().Name : "null",
+                intent.MoveInput.x, intent.MoveInput.y);
 
         if (StatusEffects != null && !StatusEffects.CanAct)
         {
-            MovementTrace.Log("StatusFX", "{0} CanAct=false (clearing actions)", name);
+            if (MovementTrace.Enabled)
+                MovementTrace.Log("StatusFX", "{0} CanAct=false (clearing actions)", name);
             intent = intent.WithActionsCleared();
         }
 
@@ -119,7 +122,8 @@ public abstract class Character : MonoBehaviour, IDamageable
             var forced = StatusEffects.GetForceMoveInput();
             if (forced.HasValue)
             {
-                MovementTrace.Log("StatusFX", "{0} forced move=({1:F2},{2:F2})", name, forced.Value.x, forced.Value.y);
+                if (MovementTrace.Enabled)
+                    MovementTrace.Log("StatusFX", "{0} forced move=({1:F2},{2:F2})", name, forced.Value.x, forced.Value.y);
                 moveInput = forced.Value;
             }
         }
@@ -128,8 +132,9 @@ public abstract class Character : MonoBehaviour, IDamageable
             FacingDirection = moveInput.normalized;
 
         Motor.SetMoveInput(moveInput);
-        MovementTrace.Log("Motor", "{0} setMove=({1:F2},{2:F2}) vel=({3:F2},{4:F2})",
-            name, moveInput.x, moveInput.y, Motor.Velocity.x, Motor.Velocity.y);
+        if (MovementTrace.Enabled)
+            MovementTrace.Log("Motor", "{0} setMove=({1:F2},{2:F2}) vel=({3:F2},{4:F2})",
+                name, moveInput.x, moveInput.y, Motor.Velocity.x, Motor.Velocity.y);
         Abilities.Tick(in intent, Time.deltaTime);
         if (Combat != null && data != null && data.hasBasicAttack)
             Combat.Tick(in intent, Time.deltaTime);
@@ -163,7 +168,8 @@ public abstract class Character : MonoBehaviour, IDamageable
     public void TakeDamage(in DamageInfo info)
     {
         // Sin muerte real: los downed son invulnerables (los finishers no aplican).
-        if (IsDowned)
+        // Health == null: prefab mal configurado sin CharacterHealth; evitar NRE.
+        if (IsDowned || Health == null)
             return;
 
         if (Health.TryDamage(in info))

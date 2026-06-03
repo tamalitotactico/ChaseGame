@@ -36,10 +36,9 @@ public class CharacterVisuals : MonoBehaviour
     [Header("Dead tint")]
     [SerializeField] Color deadTint          = new Color(0.4f, 0.4f, 0.4f, 0.7f);
 
-    [Header("Status effect tints (requiere shader Game/CharacterEffect)")]
-    [SerializeField] Color stunEffectTint  = new Color(1f, 0.9f, 0.1f, 0.55f);
-    [SerializeField] Color slowEffectTint  = new Color(0.25f, 0.55f, 1f, 0.45f);
-    [SerializeField] Color fearEffectTint  = new Color(0.65f, 0.2f, 0.85f, 0.6f);
+    // Los tints de status effect ya no viven aqui: cada StatusEffect expone su
+    // VisualTint + VisualPriority y StatusEffectController.GetTopVisualTint resuelve
+    // cual gana. Agregar un efecto nuevo con tint ya no requiere tocar este archivo.
 
     [Header("Status effect outline")]
     [SerializeField] Color markedOutlineColor = new Color(1f, 0.3f, 0f, 1f);
@@ -135,65 +134,52 @@ public class CharacterVisuals : MonoBehaviour
 
     void HandleEffectApplied(StatusEffect e)
     {
+        // Tint: generico (no depende del tipo concreto). Cada efecto expone su VisualTint.
+        RefreshEffectTint();
+
+        // VFX prefabs: siguen mapeados por tipo aqui porque son refs asignadas en el
+        // inspector (un StatusEffect es objeto C# puro y no puede serializar prefabs).
         switch (e)
         {
             case StunnedEffect _:
-                _activeEffectTint = stunEffectTint;
                 _stunVFX?.Stop();
                 if (stunFXPrefab != null)
                     _stunVFX = VFXSpawner.Attach(stunFXPrefab, _sprite != null ? _sprite.transform : transform);
                 break;
 
-            case FearedEffect _:
-                // Fear tiene prioridad maxima (mas dramatico, color morado intenso)
-                _activeEffectTint = fearEffectTint;
-                break;
-
             case SlowedEffect _:
-                // Solo sobreescribe el tint si no hay stun o fear activos (mayor prioridad)
-                if (_statusEffects != null
-                    && !_statusEffects.Has<StunnedEffect>()
-                    && !_statusEffects.Has<FearedEffect>())
-                    _activeEffectTint = slowEffectTint;
                 _slowVFX?.Stop();
                 if (slowFXPrefab != null)
                     _slowVFX = VFXSpawner.Attach(slowFXPrefab, _sprite != null ? _sprite.transform : transform);
                 break;
         }
-        _shaderDirty = true;
     }
 
     void HandleEffectRemoved(StatusEffect e)
     {
+        RefreshEffectTint();
+
         switch (e)
         {
             case StunnedEffect _:
                 _stunVFX?.Stop();
                 _stunVFX = null;
-                _activeEffectTint = ResolveTopTint();
-                break;
-
-            case FearedEffect _:
-                _activeEffectTint = ResolveTopTint();
                 break;
 
             case SlowedEffect _:
                 _slowVFX?.Stop();
                 _slowVFX = null;
-                _activeEffectTint = ResolveTopTint();
                 break;
         }
-        _shaderDirty = true;
     }
 
-    // Resuelve el tint que debe quedar activo segun la prioridad: Stun > Fear > Slow > nada.
-    Color ResolveTopTint()
+    // Toma el tint del efecto activo de mayor prioridad (resuelto por el controller).
+    void RefreshEffectTint()
     {
-        if (_statusEffects == null) return new Color(0, 0, 0, 0);
-        if (_statusEffects.Has<StunnedEffect>()) return stunEffectTint;
-        if (_statusEffects.Has<FearedEffect>())  return fearEffectTint;
-        if (_statusEffects.Has<SlowedEffect>())  return slowEffectTint;
-        return new Color(0, 0, 0, 0);
+        _activeEffectTint = _statusEffects != null
+            ? _statusEffects.GetTopVisualTint()
+            : new Color(0, 0, 0, 0);
+        _shaderDirty = true;
     }
 
     // --- Eventos de Character ---

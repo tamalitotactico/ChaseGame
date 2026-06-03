@@ -17,6 +17,8 @@ public class FearedEffect : StatusEffect
     public override bool BlocksActions => true;
     // BlocksMovement = false porque queremos que el motor APLIQUE el movimiento forzado.
     public override Vector2? ForceMoveInput => _fleeDirection;
+    public override Color VisualTint     => new Color(0.65f, 0.2f, 0.85f, 0.6f);
+    public override int   VisualPriority => 20;
 
     /// <param name="duration">Duracion del miedo en segundos.</param>
     /// <param name="fleeDirection">Direccion en que huira el objetivo. Se normaliza automaticamente; si es cero se usa Vector2.right como fallback.</param>

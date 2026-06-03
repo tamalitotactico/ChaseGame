@@ -52,11 +52,10 @@ public class FearProjectileAbility : Ability
 
     static Character FindNearestEnemy(Character owner, Vector2 fromPos, float maxRange)
     {
-        if (GameManager.Instance == null) return null;
+        var world = ServiceLocator.Resolve<IWorldQueryService>();
+        if (world == null) return null;
 
-        var candidates = owner.Team == CharacterTeam.Hunter
-            ? GameManager.Instance.Preys
-            : GameManager.Instance.Hunters;
+        var candidates = world.GetEnemiesOf(owner.Team);
 
         Character best = null;
         float bestSqr = maxRange * maxRange;

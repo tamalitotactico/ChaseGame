@@ -21,6 +21,10 @@ public class HybridInputManager : MonoBehaviour
     private bool _keyboardWasActive;
     private bool _joystickWasActive;
 
+    // Throttle del auto-find: en vez de FindAnyObjectByType cada frame mientras el
+    // joystick no exista, se reintenta como mucho 1x/seg. Se detiene al encontrarlo.
+    private float _joystickSearchTimer;
+
     private void Awake()
     {
         if (keyboardProvider == null)
@@ -34,7 +38,14 @@ public class HybridInputManager : MonoBehaviour
         // InputManager por orden de carga). Lo buscamos en runtime si el
         // wiring del inspector no esta seteado, y lo cacheamos.
         if (joystickProvider == null)
-            joystickProvider = Object.FindAnyObjectByType<VirtualJoystick>();
+        {
+            _joystickSearchTimer -= Time.unscaledDeltaTime;
+            if (_joystickSearchTimer <= 0f)
+            {
+                joystickProvider = Object.FindAnyObjectByType<VirtualJoystick>();
+                _joystickSearchTimer = 1f;
+            }
+        }
 
         bool keyboardNowActive = keyboardProvider != null && keyboardProvider.IsActive;
         bool joystickNowActive = joystickProvider != null && joystickProvider.IsActive;
@@ -61,8 +72,9 @@ public class HybridInputManager : MonoBehaviour
     public Vector2 GetMovementInput()
     {
         Vector2 v = _activeProvider?.GetMovementInput() ?? Vector2.zero;
-        MovementTrace.Log("Input", "HIM active={0} move=({1:F2},{2:F2})",
-            _activeProvider != null ? _activeProvider.GetType().Name : "null", v.x, v.y);
+        if (MovementTrace.Enabled)
+            MovementTrace.Log("Input", "HIM active={0} move=({1:F2},{2:F2})",
+                _activeProvider != null ? _activeProvider.GetType().Name : "null", v.x, v.y);
         return v;
     }
 

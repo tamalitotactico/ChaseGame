@@ -13,7 +13,11 @@ public class CombatController : MonoBehaviour
     [SerializeField] float attackRange    = 1.5f;
     [SerializeField] float attackCooldown = 1f;
     [SerializeField] int   damage         = 1;
-    [SerializeField] LayerMask targetLayers = ~0;
+    [Tooltip("Layers que recibe el ataque. Default 0 (nada): asignar la capa de personajes en el prefab.")]
+    [SerializeField] LayerMask targetLayers = 0;
+
+    // Buffer compartido para evitar GC alloc por ataque (Unity es single-thread).
+    static readonly Collider2D[] _hitBuffer = new Collider2D[16];
 
     Character _owner;
     float     _cooldownRemaining;
@@ -50,18 +54,20 @@ public class CombatController : MonoBehaviour
         _cooldownRemaining = attackCooldown;
         OnAttackUsed?.Invoke(attackCooldown);
 
-        var hits = Physics2D.OverlapCircleAll(transform.position, attackRange, targetLayers);
-        foreach (var col in hits)
+        Vector2 origin = transform.position;
+        int count = Physics2D.OverlapCircleNonAlloc(origin, attackRange, _hitBuffer, targetLayers);
+        for (int i = 0; i < count; i++)
         {
-            if (col.gameObject == gameObject) continue;
+            var col = _hitBuffer[i];
+            if (col == null || col.gameObject == gameObject) continue;
             if (col.TryGetComponent<IDamageable>(out var d) && d.IsTargetable)
             {
                 d.TakeDamage(new DamageInfo
                 {
                     Amount    = damage,
                     Source    = _owner,
-                    Origin    = transform.position,
-                    Direction = ((Vector2)(col.transform.position - transform.position)).normalized
+                    Origin    = origin,
+                    Direction = ((Vector2)col.transform.position - origin).normalized
                 });
             }
         }

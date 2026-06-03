@@ -29,10 +29,7 @@ public class TeleportIndicator : AimIndicator
     void Awake()
     {
         if (wallMask.value == -1)
-        {
-            int wall = LayerMask.NameToLayer("Wall");
-            wallMask = wall >= 0 ? (1 << wall) : 0;
-        }
+            wallMask = GameLayers.WallMask;
     }
 
     public override void Begin(Character owner, AbilityData data)
