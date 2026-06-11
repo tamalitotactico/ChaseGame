@@ -45,11 +45,21 @@ public class RevivableComponent : MonoBehaviour
 
     public event Action OnRevived;
 
-    Character _character;
+    Character     _character;
+    Collider2D[]  _bodyColliders; // colliders solidos (no-trigger) del personaje, para soltar el paso al caer
 
     void Awake()
     {
         _character = GetComponent<Character>();
+        // Cachea SOLO los colliders solidos (no-trigger). Al caer se vuelven trigger para no
+        // estorbar el paso a otros characters; al revivir se restauran. Los triggers preexistentes
+        // (zonas de interaccion, etc.) no se tocan.
+        var all = GetComponentsInChildren<Collider2D>(true);
+        int n = 0;
+        for (int i = 0; i < all.Length; i++) if (!all[i].isTrigger) n++;
+        _bodyColliders = new Collider2D[n];
+        int k = 0;
+        for (int i = 0; i < all.Length; i++) if (!all[i].isTrigger) _bodyColliders[k++] = all[i];
     }
 
     public void BeginDown()
@@ -59,6 +69,7 @@ public class RevivableComponent : MonoBehaviour
         // Bleed-out desactivado: el downed dura indefinidamente. Se conserva el
         // campo para UI/tuning pero no decrementa.
         BleedOutRemaining = bleedOutDuration;
+        SetCollidersBlocking(false); // el cuerpo caido no obstaculiza el movimiento de otros
     }
 
     /// <summary>Tickea desde DownedState cada frame.</summary>
@@ -99,11 +110,15 @@ public class RevivableComponent : MonoBehaviour
         float r2 = reviveProximityRadius * reviveProximityRadius;
         Vector2 my = _character.transform.position;
 
-        // El reviver debe ser otro Prey, vivo (no downed, no dead).
+        // El reviver debe ser otro Prey, vivo (no downed, no dead) Y capaz de actuar: un prey con
+        // un efecto que bloquea acciones (fear ahora; stun/charm a futuro) NO puede revivir. Se usa
+        // CanAct (BlocksActions) en vez de listar tipos, asi nuevos efectos negativos se cubren solos.
+        // Nota: slow NO bloquea acciones, asi que un reviver ralentizado SI puede revivir.
         foreach (var c in world.GetAlliesOf(_character.Team))
         {
             if (c == null || c == _character) continue;
             if (!c.IsAlive || c.IsDowned) continue;
+            if (c.StatusEffects != null && !c.StatusEffects.CanAct) continue;
             if (((Vector2)c.transform.position - my).sqrMagnitude <= r2)
                 return true;
         }
@@ -116,6 +131,7 @@ public class RevivableComponent : MonoBehaviour
         RevivesUsed++;
         ReviveProgress = 0f;
         BleedOutRemaining = 0f;
+        SetCollidersBlocking(true); // de pie otra vez: el cuerpo vuelve a colisionar normalmente
 
         if (_character != null && _character.Health != null)
         {
@@ -130,4 +146,14 @@ public class RevivableComponent : MonoBehaviour
     /// <summary>Llamado externamente (Hunter finish). Actualmente no-op: la
     /// muerte real esta desactivada y los downed son invulnerables.</summary>
     public void KillFromFinish() { }
+
+    /// <summary>blocking=true: colliders solidos (colisionan/estorban). blocking=false: trigger
+    /// (no estorban el paso pero siguen detectandose). El revive NO depende del collider (usa
+    /// proximidad), asi que reanimar a un caido sigue funcionando con el collider en trigger.</summary>
+    void SetCollidersBlocking(bool blocking)
+    {
+        if (_bodyColliders == null) return;
+        for (int i = 0; i < _bodyColliders.Length; i++)
+            if (_bodyColliders[i] != null) _bodyColliders[i].isTrigger = !blocking;
+    }
 }

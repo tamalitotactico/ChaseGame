@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Glue de la escena de partida. Posee:
@@ -78,6 +77,22 @@ public class GameManager : MonoBehaviour
         States = new MatchStateMachine(this);
     }
 
+    /// <summary>
+    /// Teardown de los sistemas que ESTE GameManager posee. Se llama al destruirse (unload de
+    /// la escena de partida). NO hace Clear() global: con el split Meta/Gameplay hay servicios
+    /// persistentes cross-scene (IProfileService, registrado por AppRoot con DontDestroyOnLoad)
+    /// y suscripciones de objetos persistentes que deben sobrevivir el cambio de escena. Los
+    /// subscribers scene-scoped se desuscriben en su propio OnDisable; aqui solo desregistramos
+    /// los servicios que registramos en Awake.
+    /// </summary>
+    public static void ResetStaticState()
+    {
+        Instance = null;
+        ServiceLocator.Unregister<ISpawnService>();
+        ServiceLocator.Unregister<IAuthorityContext>();
+        ServiceLocator.Unregister<IWorldQueryService>();
+    }
+
     void OnDestroy()
     {
         // CRITICO para el loop (rematch/lobby): al recargar la escena, el Awake de la
@@ -86,9 +101,7 @@ public class GameManager : MonoBehaviour
         // nuevo -> la partida recargada queda injugable. Solo limpiamos si seguimos siendo
         // la instancia activa (no fuimos reemplazados).
         if (Instance != this) return;
-        Instance = null;
-        EventBus.Clear();
-        ServiceLocator.Clear();
+        ResetStaticState();
     }
 
     void Start()
@@ -97,7 +110,10 @@ public class GameManager : MonoBehaviour
         // arrancamos directo con el rol elegido; si no, mostramos el lobby.
         if (MatchConfig.Configured)
         {
-            playerTeam = MatchConfig.PlayerTeam;
+            // Entrada desde el Meta (JUGAR): el rol se asigna AL AZAR. Se persiste en MatchConfig
+            // para coherencia: el rematch es in-place (no re-corre Start) y reusa este mismo rol.
+            playerTeam = Random.value < 0.5f ? CharacterTeam.Hunter : CharacterTeam.Prey;
+            MatchConfig.PlayerTeam = playerTeam;
             States.ChangeState(new StartingState());
         }
         else if (autoStart)
@@ -119,26 +135,54 @@ public class GameManager : MonoBehaviour
         States.ChangeState(new StartingState());
     }
 
-    /// <summary>Rejugar con la misma config: recarga la escena (reset limpio) conservando el rol.</summary>
+    /// <summary>Rejugar con el mismo rol. Reset IN-PLACE (sin recargar escena) + nueva partida.</summary>
     public void Rematch()
     {
-        MatchConfig.Configured = true;
-        ReloadActiveScene();
+        MatchConfig.Configured = true; // coherencia; el reset in-place no recarga la escena
+        ResetMatch();
+        States.ChangeState(new StartingState());
     }
 
-    /// <summary>Volver al lobby: recarga la escena y muestra el lobby para re-elegir rol.</summary>
+    /// <summary>Volver al lobby para re-elegir rol. Reset IN-PLACE + LobbyState.</summary>
     public void ReturnToLobby()
     {
         MatchConfig.Configured = false;
-        ReloadActiveScene();
+        ResetMatch();
+        States.ChangeState(new LobbyState());
     }
 
-    static void ReloadActiveScene()
+    /// <summary>
+    /// Reset IN-PLACE de la partida SIN recargar la escena. Recargar la escena activa
+    /// (SceneManager.LoadScene de la propia escena) resultaba inestable: dejaba la partida
+    /// sin iniciar / injugable. Asi mantenemos managers, UI y suscripciones vivos (no se
+    /// toca EventBus/ServiceLocator) y solo reciclamos las entidades de la partida.
+    /// </summary>
+    void ResetMatch()
     {
-        // Reset limpio: al destruirse, GameManager.OnDestroy hace EventBus.Clear()
-        // + ServiceLocator.Clear(); todos los managers (scene-scoped) se recrean.
-        var scene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(scene.buildIndex);
+        DespawnList(Hunters);
+        DespawnList(Preys);
+        Hunters.Clear();
+        Preys.Clear();
+
+        // Objetos de gameplay residuales (se recrean en la nueva partida).
+        DespawnAllOfType<Projectile>();
+        DespawnAllOfType<FearProjectile>();
+        DespawnAllOfType<RemnantDecoy>();
+
+        TimeRemaining = 0f;
+    }
+
+    static void DespawnList(List<Character> list)
+    {
+        for (int i = 0; i < list.Count; i++)
+            if (list[i] != null) Destroy(list[i].gameObject);
+    }
+
+    static void DespawnAllOfType<T>() where T : Component
+    {
+        var arr = FindObjectsByType<T>(FindObjectsInactive.Exclude);
+        for (int i = 0; i < arr.Length; i++)
+            if (arr[i] != null) Destroy(arr[i].gameObject);
     }
 
     void Update()
@@ -184,6 +228,10 @@ public class GameManager : MonoBehaviour
         var character = go.GetComponent<Character>();
         if (character == null) { Debug.LogError($"[GameManager] Prefab {prefab.name} sin Character"); Destroy(go); return; }
 
+        // Aplica la skin equipada (loadout persistente del Meta) al hijo "Visual". Las skins NO
+        // afectan gameplay: solo intercambian el RuntimeAnimatorController. Ver IProfileService.
+        ApplyEquippedSkin(go, team);
+
         // Brain + AI components
         IBrain brain;
         if (isPlayer)
@@ -208,6 +256,28 @@ public class GameManager : MonoBehaviour
         else                              Preys.Add(character);
 
         EventBus.Publish(new CharacterSpawnedEvent { Character = character });
+    }
+
+    /// <summary>
+    /// Intercambia el RuntimeAnimatorController del Animator del personaje por el de la skin
+    /// equipada (rol correspondiente), leida de IProfileService. Como CharacterAnimator cachea
+    /// los hashes de estado en su Awake (ya corrido al Instantiate), se vuelve a resolver la tabla
+    /// con RebuildStateTable tras el swap. Si no hay servicio/skin/controller, no toca nada.
+    /// </summary>
+    void ApplyEquippedSkin(GameObject go, CharacterTeam team)
+    {
+        var profile = ServiceLocator.Resolve<IProfileService>();
+        if (profile == null) return;
+
+        var skin = profile.GetEquippedSkin(team);
+        if (skin == null || skin.animatorController == null) return;
+
+        var animator = go.GetComponentInChildren<Animator>();
+        if (animator == null) return;
+        animator.runtimeAnimatorController = skin.animatorController;
+
+        var charAnim = go.GetComponent<CharacterAnimator>();
+        if (charAnim != null) charAnim.RebuildStateTable();
     }
 
     /// <summary>

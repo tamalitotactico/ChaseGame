@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// HUD principal de partida. Lee eventos del EventBus para actualizarse;
@@ -27,6 +28,10 @@ public class HUDController : MonoBehaviour
     [SerializeField] Button rematchButton;
     [Tooltip("Boton para volver al lobby (recarga la escena y muestra seleccion de rol).")]
     [SerializeField] Button lobbyButton;
+    [Tooltip("Boton para salir de la partida y volver al Meta (Hub).")]
+    [SerializeField] Button exitButton;
+    [Tooltip("Nombre de la escena Meta a la que vuelve 'Salir'.")]
+    [SerializeField] string metaSceneName = "00_Meta";
 
     Character _player;
 
@@ -35,6 +40,12 @@ public class HUDController : MonoBehaviour
         // Listeners una sola vez (no en OnEnable para no apilarlos).
         if (rematchButton != null) rematchButton.onClick.AddListener(() => GameManager.Instance?.Rematch());
         if (lobbyButton   != null) lobbyButton.onClick.AddListener(()   => GameManager.Instance?.ReturnToLobby());
+        if (exitButton    != null) exitButton.onClick.AddListener(ExitToMeta);
+    }
+
+    void ExitToMeta()
+    {
+        if (!string.IsNullOrEmpty(metaSceneName)) SceneManager.LoadScene(metaSceneName);
     }
 
     void OnEnable()
@@ -45,6 +56,7 @@ public class HUDController : MonoBehaviour
         EventBus.Subscribe<CountdownTickEvent>(OnCountdown);
         EventBus.Subscribe<MatchStartedEvent>(OnMatchStarted);
         EventBus.Subscribe<MatchEndedEvent>(OnMatchEnded);
+        EventBus.Subscribe<LobbyEnteredEvent>(OnLobbyEntered);
 
         if (resultPanel != null) resultPanel.SetActive(false);
         if (countdownPanel != null) countdownPanel.SetActive(false);
@@ -58,6 +70,15 @@ public class HUDController : MonoBehaviour
         EventBus.Unsubscribe<CountdownTickEvent>(OnCountdown);
         EventBus.Unsubscribe<MatchStartedEvent>(OnMatchStarted);
         EventBus.Unsubscribe<MatchEndedEvent>(OnMatchEnded);
+        EventBus.Unsubscribe<LobbyEnteredEvent>(OnLobbyEntered);
+    }
+
+    // Reset in-place (rematch/lobby): el panel de resultado debe ocultarse al empezar
+    // una nueva partida o al volver al lobby (no hay recarga de escena que lo resetee).
+    void OnLobbyEntered(LobbyEnteredEvent _)
+    {
+        if (resultPanel != null) resultPanel.SetActive(false);
+        if (countdownPanel != null) countdownPanel.SetActive(false);
     }
 
     void OnSpawned(CharacterSpawnedEvent e)
@@ -95,6 +116,8 @@ public class HUDController : MonoBehaviour
 
     void OnCountdown(CountdownTickEvent e)
     {
+        // Nueva partida arrancando (incl. rematch in-place): ocultar el panel de resultado.
+        if (resultPanel != null) resultPanel.SetActive(false);
         if (countdownPanel != null) countdownPanel.SetActive(e.SecondsLeft > 0);
         if (countdownText != null) countdownText.text = e.SecondsLeft > 0 ? e.SecondsLeft.ToString() : "GO!";
     }

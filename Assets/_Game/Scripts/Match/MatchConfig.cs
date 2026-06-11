@@ -16,4 +16,7 @@ public static class MatchConfig
 
     /// <summary>false = mostrar lobby; true = arrancar match directo con PlayerTeam.</summary>
     public static bool Configured = false;
+
+    /// <summary>Modo elegido en el Hub/Select Gamemode. Sobrevive el LoadScene (estatico).</summary>
+    public static string SelectedModeId = "survival";
 }

@@ -106,6 +106,7 @@ public class StatusEffectController : MonoBehaviour
                 old.OnRemove(_char);
                 _active.RemoveAt(i);
                 OnEffectRemoved?.Invoke(old);
+                EventBus.Publish(new StatusEffectRemovedEvent { Character = _char, Effect = old });
                 break;
             }
         }
@@ -113,6 +114,7 @@ public class StatusEffectController : MonoBehaviour
         _active.Add(effect);
         effect.OnApply(_char);
         OnEffectApplied?.Invoke(effect);
+        EventBus.Publish(new StatusEffectAppliedEvent { Character = _char, Effect = effect });
         RefreshMotor();
     }
 
@@ -127,6 +129,7 @@ public class StatusEffectController : MonoBehaviour
                 e.OnRemove(_char);
                 _active.RemoveAt(i);
                 OnEffectRemoved?.Invoke(e);
+                EventBus.Publish(new StatusEffectRemovedEvent { Character = _char, Effect = e });
                 RefreshMotor();
                 return;
             }
@@ -159,6 +162,7 @@ public class StatusEffectController : MonoBehaviour
                 e.OnRemove(_char);
                 _active.RemoveAt(i);
                 OnEffectRemoved?.Invoke(e);
+                EventBus.Publish(new StatusEffectRemovedEvent { Character = _char, Effect = e });
                 changed = true;
             }
         }

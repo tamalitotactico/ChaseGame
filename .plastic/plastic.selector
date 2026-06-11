@@ -1,4 +1,0 @@
-repository "Corre que te atrapan/Corre que te atrapan@4673170902520@cloud"
-  path "/"
-    br "/main"
-    co "/main"

@@ -18,7 +18,7 @@ namespace Pathfinding {
 	/// If you want to make the AI to follow a particular object you can attach the <see cref="Pathfinding.AIDestinationSetter"/> component.
 	/// Take a look at the getstarted (view in online documentation for working links) tutorial for more instructions on how to configure this script.
 	///
-	/// Here is a video of this script being used move an agent around (technically it uses the <see cref="Pathfinding.Examples.MineBotAI"/> script that inherits from this one but adds a bit of animation support for the example scenes):
+	/// Here is a video of this script being used move an agent around (technically it uses the MineBotAI script that inherits from this one but adds a bit of animation support for the example scenes):
 	/// [Open online documentation to see videos]
 	///
 	/// \section variables Quick overview of the variables

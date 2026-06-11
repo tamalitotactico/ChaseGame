@@ -53,7 +53,16 @@ public class CharacterAnimator : MonoBehaviour
     {
         _char = GetComponent<Character>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
+        RebuildStateTable();
+    }
 
+    /// <summary>
+    /// (Re)resuelve la tabla [set, octante] -> hash de estado contra el controller ACTUAL del Animator.
+    /// Llamar tras intercambiar runtimeAnimatorController en runtime (skins, ver GameManager.SpawnOne):
+    /// HasState depende del controller asignado, asi que sin re-resolver el sprite no animaria.
+    /// </summary>
+    public void RebuildStateTable()
+    {
         _fallbackHash = Animator.StringToHash(idleFallback);
 
         int sets = SetPrefix.Length;
@@ -67,6 +76,7 @@ public class CharacterAnimator : MonoBehaviour
                 _stateHash[s, d] = (animator != null && animator.HasState(0, h)) ? h : _fallbackHash;
             }
         }
+        _current = 0; // fuerza re-Play en el proximo Update con la nueva tabla
     }
 
     void Update()

@@ -6,9 +6,23 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Pp]rofilerCaptures/
 *.pidb.meta
 *.pdb.meta
 *.mdb.meta
+
+# Unity Android build temp (CMake/Ninja/Gradle cache)
+/.utmp/
+
+# Plastic SCM (migrado a git; metadata local ya no se versiona)
+/.plastic/
+ignore.conf
+
+# Build artifacts
+*.apk
+*.aab
+*.unitypackage
 
 # Visual Studio
 .vs/
@@ -22,3 +36,4 @@
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini

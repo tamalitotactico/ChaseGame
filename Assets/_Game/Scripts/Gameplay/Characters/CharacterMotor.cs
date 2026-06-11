@@ -35,6 +35,11 @@ public class CharacterMotor : MonoBehaviour
     void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        // El movimiento corre en FixedUpdate (timestep fijo) pero camara y FoW leen
+        // transform.position en Update/LateUpdate (framerate variable): sin interpolar,
+        // la posicion "salta" entre steps de fisica y se percibe como temblor/desfase
+        // tanto en el seguimiento de camara como en la mascara de niebla de guerra.
+        _rb.interpolation = RigidbodyInterpolation2D.Interpolate;
     }
 
     public void Setup(float speed)

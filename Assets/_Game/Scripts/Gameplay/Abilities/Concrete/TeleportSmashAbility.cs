@@ -87,7 +87,9 @@ public class TeleportSmashAbility : Ability
         }
 
         // AoE: aplicar Fear + Slow a Prey en el radio
-        int count = Physics2D.OverlapCircleNonAlloc(landingPos, _d.aoeRadius, _hitBuffer, _d.preyLayer);
+        var filter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers };
+        filter.SetLayerMask(_d.preyLayer);
+        int count = Physics2D.OverlapCircle(landingPos, _d.aoeRadius, filter, _hitBuffer);
         for (int i = 0; i < count; i++)
         {
             var col = _hitBuffer[i];

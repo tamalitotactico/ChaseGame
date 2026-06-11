@@ -24,7 +24,9 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\coart\\\\Dev\\\\GameDev\\\\UnityGames\\\\ChaseGame\\\\Assets\\\\_Game\\\\Scripts\\\\\" -Recurse -Filter \"*.cs\" | Select-Object -ExpandProperty FullName | Sort-Object)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\coart\\\\Dev\\\\GameDev\\\\UnityGames\\\\ChaseGame\" -Directory)",
       "Bash(grep -o \"m_Name: [^$]*\" \"C:/Users/coart/Dev/GameDev/UnityGames/ChaseGame/Assets/_Game/Scenes/00_Sandbox_TilesetTEST.unity\")",
-      "Bash(find \"c:\\\\\\\\Users\\\\\\\\coart\\\\\\\\Dev\\\\\\\\GameDev\\\\\\\\UnityGames\\\\\\\\ChaseGame\\\\\\\\Assets\\\\\\\\_Game\\\\\\\\Scripts\\\\\\\\\" -type f -name \"*.cs\")"
+      "Bash(find \"c:\\\\\\\\Users\\\\\\\\coart\\\\\\\\Dev\\\\\\\\GameDev\\\\\\\\UnityGames\\\\\\\\ChaseGame\\\\\\\\Assets\\\\\\\\_Game\\\\\\\\Scripts\\\\\\\\\" -type f -name \"*.cs\")",
+      "Bash(echo \"=== project .claude ===\" ; ls -la .claude 2>/dev/null ; echo \"=== project .claude/skills ===\" ; ls -la .claude/skills 2>/dev/null ; echo \"=== user ~/.claude/skills ===\" ; ls -la \"$HOME/.claude/skills\" 2>/dev/null ; echo \"=== gitignore .claude refs ===\" ; grep -n \"claude\" .gitignore 2>/dev/null)",
+      "Read(//c/Users/coart/.claude/**)"
     ]
   }
 }

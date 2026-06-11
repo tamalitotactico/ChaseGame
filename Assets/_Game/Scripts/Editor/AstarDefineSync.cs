@@ -32,8 +32,15 @@ public static class AstarDefineSync
         // delayCall: ejecutar despues de que el editor inicialice — evita
         // race conditions con PlayerSettings durante el dominio reload.
         EditorApplication.delayCall += Sync;
-        // Re-sync cuando cambia el active build target (cambio de Build Profile).
-        EditorUserBuildSettings.activeBuildTargetChanged += Sync;
+    }
+
+    /// <summary>Re-sync cuando cambia el active build target (cambio de Build Profile).
+    /// Unity descubre esta interfaz automaticamente, sin necesidad de suscribirse al
+    /// evento `activeBuildTargetChanged` (deprecado).</summary>
+    class BuildTargetWatcher : IActiveBuildTargetChanged
+    {
+        public int callbackOrder => 0;
+        public void OnActiveBuildTargetChanged(BuildTarget previousTarget, BuildTarget newTarget) => Sync();
     }
 
     [MenuItem("Tools/Chase Game/Validate A* Defines Across Platforms")]

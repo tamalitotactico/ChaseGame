@@ -78,11 +78,13 @@ public class RemnantDecoy : MonoBehaviour
         if (_triggered)
             return;
 
-        int count = Physics2D.OverlapCircleNonAlloc(
+        var scanFilter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers };
+        scanFilter.SetLayerMask(_preyLayer);
+        int count = Physics2D.OverlapCircle(
             transform.position,
             _activationRadius,
-            _hitBuffer,
-            _preyLayer
+            scanFilter,
+            _hitBuffer
         );
 
         for (int i = 0; i < count; i++)
@@ -113,11 +115,13 @@ public class RemnantDecoy : MonoBehaviour
     {
         _triggered = true;
 
-        int count = Physics2D.OverlapCircleNonAlloc(
+        var triggerFilter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers };
+        triggerFilter.SetLayerMask(_preyLayer);
+        int count = Physics2D.OverlapCircle(
             transform.position,
             _effectRadius,
-            _hitBuffer,
-            _preyLayer
+            triggerFilter,
+            _hitBuffer
         );
 
         for (int i = 0; i < count; i++)

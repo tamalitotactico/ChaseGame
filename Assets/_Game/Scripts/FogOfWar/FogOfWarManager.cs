@@ -28,6 +28,10 @@ public class FogOfWarManager : MonoBehaviour
     /// <summary>Primera VisionSource registrada (jugador local).</summary>
     public VisionSource PrimarySource => _primarySource;
 
+    /// <summary>Origen de mundo desde el que se raycasteo el ultimo poligono de vision.
+    /// El shader centra la niebla aqui (_VisionPos0); asi centro y forma nunca se desfasan.</summary>
+    public Vector2 LastViewOrigin { get; private set; }
+
     [Header("Fog")]
     [Tooltip("SpriteRenderer que usa el material Game/FogOverlay. MaskInteraction=None.")]
     [SerializeField] SpriteRenderer fogOverlay;
@@ -137,9 +141,22 @@ public class FogOfWarManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reapunta la fuente de vision primaria en runtime. Lo usa el modo fantasma: al caer downed el
+    /// jugador local, la vision pasa al fantasma; al revivir, vuelve al cuerpo. Reusa la ruta de init
+    /// (recrea RT/mesh y resetea LastViewOrigin). Son eventos raros, el costo es aceptable.
+    /// </summary>
+    public void SetPrimarySource(VisionSource source)
+    {
+        if (source == null) return;
+        InitializeSource(source);
+    }
+
     void InitializeSource(VisionSource source)
     {
         _primarySource = source;
+        // Evita un primer frame con centro en (0,0) antes del primer BuildMesh.
+        LastViewOrigin = source.transform.position;
 
         if (_rt != null) _rt.Release();
         _rt = new RenderTexture(textureSize, textureSize, 0, RenderTextureFormat.ARGB32)
@@ -194,24 +211,27 @@ public class FogOfWarManager : MonoBehaviour
         if (_primarySource == null) return;
 
         _rebuildTimer += Time.deltaTime;
-        float interval = updateInterval;
-#if UNITY_ANDROID || UNITY_IOS
-        // En mobile forzamos un minimo para no rebuildear el FoW (rayCount raycasts)
-        // cada frame: a 60 FPS eso son miles de raycasts/seg. 0.05 = 20 rebuilds/seg.
-        if (interval < 0.05f) interval = 0.05f;
-#endif
-        bool rebuild = interval <= 0f || _rebuildTimer >= interval;
+        // updateInterval=0 => rebuild cada frame (recomendado para fluidez). Un valor >0 throttlea
+        // el FoW completo de forma UNIFORME (centro Y forma juntos), nunca por separado.
+        // NO reintroducir un clamp que solo throttlee BuildMesh (la forma) dejando el centro por
+        // frame: eso desfasa la sombra de muro y produce el temblor (ver comentario CRITICO abajo).
+        bool rebuild = updateInterval <= 0f || _rebuildTimer >= updateInterval;
         if (rebuild)
         {
             _rebuildTimer = 0f;
-            BuildMesh();
+            BuildMesh(); // actualiza LastViewOrigin (origen de los raycasts)
         }
 
         if (_fogMat == null) return;
 
-        Vector2 pos = _primarySource.transform.position;
+        // CRITICO (anti-temblor): el centro del shader (_VisionPos0) debe ser EXACTAMENTE el punto
+        // desde el que se raycasteo el poligono actual = LastViewOrigin. Si en su lugar leyeramos
+        // _primarySource.transform.position cada frame mientras BuildMesh va throttleada, el shader
+        // re-centraria un poligono viejo sobre la posicion nueva: la sombra "sigue al player y
+        // vuelve a su sitio" en cada rebuild = el temblor reportado. Atar centro==origen lo elimina
+        // por construccion. Con updateInterval=0 (cada frame) LastViewOrigin == posicion del sprite.
+        Vector2 pos = LastViewOrigin;
 
-        // El fade sigue al jugador a 60 fps de forma fluida
         _fogMat.SetVector(ID_VisionPos0,   new Vector4(pos.x, pos.y, 0f, 0f));
         _fogMat.SetFloat(ID_VisionRadius0, _primarySource.VisionRadius);
         _fogMat.SetTexture(ID_VisionTex0,  _rt);
@@ -221,9 +241,13 @@ public class FogOfWarManager : MonoBehaviour
     {
         if (_visionMeshMat == null || _primarySource == null || _rt == null) return;
 
+        // Misma posicion cruda que usa _VisionPos0 (ver LateUpdate): el poligono de raycast y su
+        // colocacion en el shader deben partir del mismo punto exacto = el del sprite del player.
         Vector2 origin = _primarySource.transform.position;
         float   radius = _primarySource.VisionRadius;
         float   angleStep = 360f / rayCount;
+
+        LastViewOrigin = origin;
 
         _verts[0] = Vector3.zero; // Origen local
 

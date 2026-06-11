@@ -42,7 +42,7 @@ public class AudioManager : MonoBehaviour, IAudioService
         {
             if (_listener == null)
             {
-                var l = FindFirstObjectByType<AudioListener>();
+                var l = FindAnyObjectByType<AudioListener>();
                 if (l != null) _listener = l.transform;
             }
             return _listener;

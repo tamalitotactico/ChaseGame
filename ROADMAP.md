@@ -4,15 +4,16 @@ Roadmap por **hitos**, no por fechas. Cada fase se cierra cuando su *gate* se cu
 no cuando pasa un tiempo. El orden es por dependencia: primero el build-out tecnico
 (hasta tener producto jugable en red), luego el bloque comercial.
 
-**Ultima actualizacion:** 2026-05-30 · Estado del codigo: post-auditoria (Phase 2 tecnica)
+**Ultima actualizacion:** 2026-06-07 · Estado del codigo: Phase 2 (UI/meta-layer landscape) implementada
 
 ---
 
 ## Principios transversales (aplican a todas las fases)
 
-- **Movil portrait como target**, jugable en el editor de Unity (PC) para test/coding.
-  Todo HUD/joystick/botones se disena en vertical; el input hibrido (teclado + joystick
-  virtual) se mantiene para testear sin device.
+- **Movil landscape como target** (decision 2026-06-06, ver memoria `phase2-ui-decisions`),
+  jugable en el editor de Unity (PC) para test/coding. Orientacion bloqueada a landscape
+  (gameplay + menus); todo HUD/joystick/botones se disena horizontal; el input hibrido
+  (teclado + joystick virtual) se mantiene para testear sin device.
 - **Arquitectura networking-ready, sin bakear decisiones**: el gameplay nunca toca
   `GameManager.Instance` ni `Object.Instantiate` directo. Pasa por las costuras ya
   sembradas: `ServiceLocator`, `IAuthorityContext`, `ISpawnService`, `IWorldQueryService`,
@@ -81,28 +82,64 @@ sin reinicios ni fugas de estado entre partidas.
 
 ---
 
-## Fase 2 — UI / UX / Pantallas
+## Fase 2 — UI / UX / Meta-layer (landscape)  *(IMPLEMENTADA 2026-06)*
 
-**Objetivo:** el set completo de pantallas y un HUD portrait pulido, todo navegable.
+**Objetivo:** el meta-juego front-end completo en landscape (Hub, Customize, Detalle de
+Personaje, Select Gamemode, stubs Shop/Chest) sobre un **loadout persistente** (1 Hunter +
+1 Prey + 3 emotes), con rol asignado al azar en partida. Economia display-only (sin earn/spend).
 
-**Gate:** un jugador nuevo puede: abrir la app → menu → elegir modo/rol/personaje → jugar →
-ver resultado → rejugar o volver al menu, sin instrucciones.
+**Gate:** la app abre en Meta → equipar hunter/prey/skin/emotes (persiste en disco) → elegir
+modo → JUGAR → partida con rol aleatorio usando lo equipado → resultado → Revancha (in-place)
+o Salir (vuelve al Hub), todo en landscape, sin reinicios. **Verificado en Play via MCP.**
 
-### Workstream 2.1 — Flujo de pantallas
-- Splash / boot → **Menu principal** → (seleccion de modo) → **Lobby / seleccion de rol** →
-  **seleccion de personaje** → HUD en partida → **resultado** → rematch / lobby.
-- Navegacion con back, transiciones, estados de carga.
-- Diseñadas **network-ready**: el lobby es el lugar natural donde luego entran salas/matchmaking.
+Decisiones cerradas (ver memoria `phase2-ui-decisions`): landscape total · 2 escenas (Meta +
+Gameplay) · `MetaCharacter` envuelve `CharacterData` · loadout persistente (JSON en
+`persistentDataPath`), economia display-only.
 
-### Workstream 2.2 — HUD de partida (portrait)
-- Re-layout vertical: joystick, botones de habilidad (Q/E/R), ataque, timer, corazones.
-- UI del fantasma: **puntero al cuerpo**, boton de **ping**, prompt de revive y barra de progreso.
-- Indicadores de downed/aliados, casting bar, iconos de status effect (varios ya existen).
+### Workstream 2.1 — Arquitectura meta (DONE)
+- **Capa persistente** `AppRoot` (DontDestroyOnLoad) registra `IProfileService` para que el
+  loadout sobreviva el cambio Meta↔Gameplay. Modelo de datos SO: `MetaCharacter`/`Skin`/
+  `EmoteData`/`GameModeData`/`MetaCatalog`; estado serializable `ProfileState` (loadout +
+  ownership + currencies).
+- **Screen system** desacoplado: `IScreenService`/`ScreenService` con back-stack;
+  `ScreenController` base; la UI habla solo via `EventBus` (LoadoutChanged/Currency/GameMode/
+  ScreenChanged) y `ServiceLocator`, nunca screen-a-screen.
+- **2 escenas**: `00_Meta` (boot, idx0) + Gameplay (idx1). JUGAR fija `MatchConfig` y carga
+  Gameplay; "Salir" desde resultados vuelve a `00_Meta`.
 
-### Workstream 2.3 — Settings, pausa y UX
-- Pausa, settings (volumen Master/SFX/Music/Ambient → ya hay buses en `GameAudioMixer`).
-- Sensibilidad/posicion del joystick, opciones de accesibilidad basicas.
-- Feedback/UX: confirmaciones, tooltips de habilidad, juice de transiciones.
+### Workstream 2.2 — Pantallas meta (DONE)
+- **Hub**: avatar equipado con toggle Hunter/Prey, perfil, monedas (display), accesos
+  SHOP/CUSTOMIZE/CHEST, selector de modo, JUGAR.
+- **Customize**: sidebar (Hunters/Preys/Emotes), grid reusable con owned/locked (silueta),
+  sort por rareza + favoritos persistidos, rueda de 3 emotes.
+- **Detalle de Personaje**: splash, rareza, habilidades (de `CharacterData.abilities`),
+  seleccion de skin con preview, carrusel, READY = equipar.
+- **Select Gamemode**: modo destacado "Modo del dia" (rotacion diaria determinista) +
+  secundarios; solo Supervivencia funcional, resto `isComingSoon`.
+- **Shop / Chest**: stubs (entrar/salir), contenido real en Phase 7.
+
+### Workstream 2.3 — Cableado de partida (DONE)
+- Rol **al azar** al entrar desde el Meta; `GameManager.SpawnOne` lee `IProfileService` y
+  aplica la `Skin` equipada al hijo "Visual" (swap de `RuntimeAnimatorController` +
+  `CharacterAnimator.RebuildStateTable`). Las skins no afectan gameplay.
+- Resultados: "Revancha" = reset in-place; "Salir" = `LoadScene(00_Meta)`.
+- `GameManager` vuelve a ser estrictamente scene-scoped (se removio el `SceneController`
+  DontDestroyOnLoad que lo arrastraba a persistir y filtraba la instancia al volver al Meta).
+
+### Workstream 2.4 — Pendiente de Phase 2 (pulido)
+- HUD de partida en landscape: re-layout de joystick/habilidades/timer/corazones (placeholder
+  actual). UI del fantasma: **puntero al cuerpo**, boton de **ping**, prompt + barra de revive.
+- Settings/pausa (buses ya en `GameAudioMixer`), sensibilidad de joystick, transiciones/juice.
+- Arte real de tarjetas/iconos/splashes llega en Phase 6 (hoy placeholders; splash de prueba
+  via `SplashartTest.mp4`).
+- **PENDIENTE (FoW oscurece al personaje):** los sprites de personaje (sortingOrder 2) quedan
+  por DEBAJO del `FogOverlay` (order 20), asi que la niebla los oscurece. Pegado a una pared, la
+  vision (raycast desde los pies) no llega a la cabeza y el overlay corta/oscurece la parte alta
+  del sprite. Diseno buscado: la niebla solo oscurece TERRENO; los personajes son binarios
+  (mostrar/ocultar via `CharacterFogVisibility`). Fix recomendado (Opcion A): subir el
+  sortingOrder de los sprites de personaje por encima del overlay cuando estan visibles
+  (`CharacterFogVisibility.Apply` ya lo promete en su comentario pero el codigo no lo hace).
+  Decidido posponer 2026-06-08.
 
 ---
 
@@ -177,7 +214,7 @@ comportamiento respecto al modo local.
 
 ## Fase 6 — Arte definitivo  *(inicio del bloque comercial)*
 
-**Objetivo:** arte final integrado, coherente, en portrait.
+**Objetivo:** arte final integrado, coherente, en landscape.
 
 **Gate:** build con arte definitivo, sin placeholders en pantallas o personajes principales.
 
@@ -236,7 +273,7 @@ Hunters ganan si TODAS las preys estan downed a la vez (sin aliado vivo para rev
 | El modo fantasma rompe el balance o la claridad | Media | Empezar minimo (roam + 1 ping, sin interaccion de mapa). Validar en playtest antes de ampliar. |
 | Loop de rejugar deja estado residual (leaks/suscripciones) | Media | Reset explicito y verificable; checklist de despawn/Clear; test de N partidas seguidas. |
 | Arte tarda o no cuadra con el estilo | Alta | Definir estilo y contactar artista durante Fase 4, no esperar a Fase 6. |
-| Portrait limita la lectura del mapa top-down | Media | Validar framing/zoom de camara temprano en Fase 2; ajustar vision/FoW si hace falta. |
+| Landscape y framing del mapa top-down | Media | Validar framing/zoom de camara al hacer el HUD landscape (WS 2.4); ajustar vision/FoW si hace falta. |
 | Cold start: nadie en matchmaking | Media | Sala privada por codigo desde el dia 1 + soft launch regional concentrado. |
 | Apple rechaza por monetizacion | Baja | Revisar guidelines antes de implementar IAP/ads, no despues. |
 

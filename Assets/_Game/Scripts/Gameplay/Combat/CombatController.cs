@@ -55,7 +55,9 @@ public class CombatController : MonoBehaviour
         OnAttackUsed?.Invoke(attackCooldown);
 
         Vector2 origin = transform.position;
-        int count = Physics2D.OverlapCircleNonAlloc(origin, attackRange, _hitBuffer, targetLayers);
+        var filter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers };
+        filter.SetLayerMask(targetLayers);
+        int count = Physics2D.OverlapCircle(origin, attackRange, filter, _hitBuffer);
         for (int i = 0; i < count; i++)
         {
             var col = _hitBuffer[i];
