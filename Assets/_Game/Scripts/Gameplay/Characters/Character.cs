@@ -75,6 +75,20 @@ public abstract class Character : MonoBehaviour, IDamageable
         _brain = brain;
     }
 
+    /// <summary>
+    /// Reemplaza el CharacterData en runtime y re-inicializa todos los sistemas (stats,
+    /// abilities, ataque basico) + reconstruye la tabla del CharacterAnimator. Lo usa el
+    /// Character Preview Harness (Tools > Chase Game) y, a futuro, GameManager para inyectar
+    /// el personaje equipado sobre el prefab base sin necesidad de 8 prefabs distintos.
+    /// </summary>
+    public void SetData(CharacterData newData)
+    {
+        data = newData;
+        Initialize();
+        var anim = GetComponentInChildren<CharacterAnimator>();
+        if (anim != null) anim.RebuildStateTable();
+    }
+
     public void SetAuthority(IAuthorityContext auth)
     {
         Authority = auth ?? LocalAuthority.Instance;
@@ -173,6 +187,7 @@ public abstract class Character : MonoBehaviour, IDamageable
             return;
 
         if (Health.TryDamage(in info))
+        {
             EventBus.Publish(
                 new CharacterDamagedEvent
                 {
@@ -181,5 +196,10 @@ public abstract class Character : MonoBehaviour, IDamageable
                     MaxHealth = Health.MaxHealth,
                 }
             );
+
+            // Solo ataques basicos que conectan cuentan para la carga de ultimates de hunter.
+            if (info.FromBasicAttack && info.Source != null)
+                EventBus.Publish(new BasicAttackLandedEvent { Attacker = info.Source, Victim = this });
+        }
     }
 }

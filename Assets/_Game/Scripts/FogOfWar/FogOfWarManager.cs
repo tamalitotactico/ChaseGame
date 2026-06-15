@@ -32,6 +32,19 @@ public class FogOfWarManager : MonoBehaviour
     /// El shader centra la niebla aqui (_VisionPos0); asi centro y forma nunca se desfasan.</summary>
     public Vector2 LastViewOrigin { get; private set; }
 
+    /// <summary>Cuando true, la niebla se APAGA por completo (overlay oculto + todos los personajes
+    /// visibles via CharacterFogVisibility). Lo usa el modo fantasma: el jugador downed debe ver TODO
+    /// el mapa mientras explora. Se restaura al revivir.</summary>
+    public bool RevealAll { get; private set; }
+
+    /// <summary>Enciende/apaga el modo "ver todo" (sin niebla). Apaga el overlay y, via RevealAll,
+    /// CharacterFogVisibility muestra a todos. LateUpdate corta los raycasts mientras esta activo.</summary>
+    public void SetRevealAll(bool on)
+    {
+        RevealAll = on;
+        if (fogOverlay != null) fogOverlay.enabled = !on;
+    }
+
     [Header("Fog")]
     [Tooltip("SpriteRenderer que usa el material Game/FogOverlay. MaskInteraction=None.")]
     [SerializeField] SpriteRenderer fogOverlay;
@@ -209,6 +222,7 @@ public class FogOfWarManager : MonoBehaviour
     void LateUpdate()
     {
         if (_primarySource == null) return;
+        if (RevealAll) return; // niebla apagada (modo fantasma): sin rebuild ni overlay
 
         _rebuildTimer += Time.deltaTime;
         // updateInterval=0 => rebuild cada frame (recomendado para fluidez). Un valor >0 throttlea

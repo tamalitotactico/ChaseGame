@@ -64,6 +64,8 @@ public class CharacterVisuals : MonoBehaviour
     Color _activeEffectTint = new Color(0, 0, 0, 0);
     float _outlineEnabled   = 0f;
     Color _outlineColor     = Color.clear;
+    float _stealthMode      = 0f;          // 0 normal, 1 invisible, 2 camuflaje
+    Color _stealthColor     = new Color(0.55f, 0.7f, 1f, 1f);
     bool  _shaderDirty      = false;
 
     // Handles de VFX adjuntos
@@ -74,6 +76,8 @@ public class CharacterVisuals : MonoBehaviour
     static readonly int ID_EffectTint     = Shader.PropertyToID("_EffectTint");
     static readonly int ID_OutlineEnabled = Shader.PropertyToID("_OutlineEnabled");
     static readonly int ID_OutlineColor   = Shader.PropertyToID("_OutlineColor");
+    static readonly int ID_StealthMode    = Shader.PropertyToID("_StealthMode");
+    static readonly int ID_StealthColor   = Shader.PropertyToID("_StealthColor");
 
     void Awake()
     {
@@ -136,6 +140,7 @@ public class CharacterVisuals : MonoBehaviour
     {
         // Tint: generico (no depende del tipo concreto). Cada efecto expone su VisualTint.
         RefreshEffectTint();
+        RefreshStealth();
 
         // VFX prefabs: siguen mapeados por tipo aqui porque son refs asignadas en el
         // inspector (un StatusEffect es objeto C# puro y no puede serializar prefabs).
@@ -158,6 +163,7 @@ public class CharacterVisuals : MonoBehaviour
     void HandleEffectRemoved(StatusEffect e)
     {
         RefreshEffectTint();
+        RefreshStealth();
 
         switch (e)
         {
@@ -179,6 +185,23 @@ public class CharacterVisuals : MonoBehaviour
         _activeEffectTint = _statusEffects != null
             ? _statusEffects.GetTopVisualTint()
             : new Color(0, 0, 0, 0);
+        _shaderDirty = true;
+    }
+
+    // Look de ocultamiento (invisible/camuflaje) del efecto que oculta al owner. El alpha
+    // (quien lo ve) lo aplica StateVisibility aparte en Update; aca solo el ASPECTO.
+    void RefreshStealth()
+    {
+        var hide = _statusEffects != null ? _statusEffects.GetHidingEffect() : null;
+        if (hide != null && hide.Stealth != StealthStyle.None)
+        {
+            _stealthMode  = (float)(int)hide.Stealth;
+            _stealthColor = hide.StealthColor;
+        }
+        else
+        {
+            _stealthMode = 0f;
+        }
         _shaderDirty = true;
     }
 
@@ -253,7 +276,12 @@ public class CharacterVisuals : MonoBehaviour
         if (_sprite == null) return;
 
         _flashTimer = Mathf.Max(0f, _flashTimer - Time.deltaTime);
-        _sprite.color = ComputeColor();
+
+        // Canal de visibilidad por estado (camuflaje/invisible): multiplica el alpha del color
+        // base segun la regla de StateVisibility para el viewer local. 1 = sin cambio.
+        var c = ComputeColor();
+        c.a *= StateVisibility.AlphaFor(_char);
+        _sprite.color = c;
 
         if (_shaderDirty) FlushShaderProperties();
     }
@@ -280,6 +308,9 @@ public class CharacterVisuals : MonoBehaviour
         _mat.SetFloat(ID_OutlineEnabled, _outlineEnabled);
         if (_outlineEnabled > 0.5f)
             _mat.SetColor(ID_OutlineColor, _outlineColor);
+        _mat.SetFloat(ID_StealthMode, _stealthMode);
+        if (_stealthMode > 0.5f)
+            _mat.SetColor(ID_StealthColor, _stealthColor);
         _shaderDirty = false;
     }
 }

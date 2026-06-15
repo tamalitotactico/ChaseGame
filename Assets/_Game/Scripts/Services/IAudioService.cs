@@ -24,6 +24,14 @@ public interface IAudioService
     AudioHandle PlayAttached(AudioCue cue, Transform follow);
 
     /// <summary>
+    /// Reproduce un AudioClip suelto (sin AudioCue). Va al bus SFX por defecto.
+    /// spatial=true: sigue al Transform y atenua por distancia oyente-emisor (con spread alto
+    /// para no panear duro al caminar). spatial=false: 2D centrado, se oye normal sin paneo
+    /// (para el sonido "propio", ej. tu emote). Para emisores remotos usar spatial=true.
+    /// </summary>
+    AudioHandle PlayAttached(AudioClip clip, Transform follow, float volume = 1f, bool spatial = true);
+
+    /// <summary>
     /// Reproduce un AudioCue en 2D GLOBAL (spatialBlend=0): se escucha en todo el mapa al
     /// mismo volumen, ignorando cue.spatial. Para taunts/anuncios que todos deben oir
     /// (ej. la risa del hunter al derribar un prey).

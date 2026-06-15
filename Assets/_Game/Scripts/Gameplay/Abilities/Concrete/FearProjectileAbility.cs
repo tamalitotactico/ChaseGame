@@ -45,6 +45,7 @@ public class FearProjectileAbility : Ability
             new Vector3(ctx.OwnerPosition.x, ctx.OwnerPosition.y, 0f),
             Quaternion.FromToRotation(Vector3.right, dir));
 
+        ProjectileSetup.Apply(go, _d.ProjectileRadius);
         if (go != null && go.TryGetComponent<FearProjectile>(out var fp))
             fp.Init(dir, _d.speed, _d.range, target, _d.homing, _d.homingTurnRateDeg,
                     _d.fearDuration, _d.slowDuration, _d.slowMultiplier, ctx.Owner, _d.sfxOnHit);

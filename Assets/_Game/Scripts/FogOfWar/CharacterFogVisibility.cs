@@ -54,6 +54,9 @@ public class CharacterFogVisibility : MonoBehaviour
         var fow = FogOfWarManager.Instance;
         if (fow == null) { Apply(visible: true, boost: false); return; }
 
+        // Modo "ver todo" (fantasma): todos los personajes visibles, sin niebla.
+        if (fow.RevealAll) { Apply(visible: true, boost: false); return; }
+
         var src = fow.PrimarySource;
         if (src == null) { Apply(visible: true, boost: false); return; }
 

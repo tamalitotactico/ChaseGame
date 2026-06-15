@@ -26,6 +26,7 @@ public class ProjectileAbility : Ability
             new Vector3(ctx.OwnerPosition.x, ctx.OwnerPosition.y, 0f),
             Quaternion.FromToRotation(Vector3.right, dir));
 
+        ProjectileSetup.Apply(go, _d.ProjectileRadius);
         if (go != null && go.TryGetComponent<Projectile>(out var p))
             p.Init(dir, _d.speed, _d.range, _d.damage, ctx.Owner, _d.sfxOnHit);
     }

@@ -12,12 +12,14 @@ using UnityEngine.UI;
 /// Cuando un aliado esta reviviendo el cuerpo (ReviveProgressChangedEvent.HasReviver del cuerpo),
 /// cambia de color y pulsa para avisar al jugador que vuelva.
 /// </summary>
+// RUNTIME-UI-REVIEW: construido en runtime (sin prefab). Sprite/tamaño/colores ya expuestos via
+// GhostModeController; pendiente convertir el fantasma entero a prefab (lo exigira Fusion Runner.Spawn).
 [DisallowMultipleComponent]
 public class GhostBodyPointer : MonoBehaviour
 {
     [Header("Aspecto")]
-    [Tooltip("Tamaño de la flecha/baliza en px.")]
-    [SerializeField] float markerSize = 64f;
+    [Tooltip("Tamaño de la flecha/baliza en px (lo setea GhostModeController.pointerSize).")]
+    [SerializeField] float markerSize = 44f;
     [Tooltip("Margen desde el borde de pantalla al clampear, en px.")]
     [SerializeField] float edgeMargin = 48f;
     [Tooltip("Offset vertical de la baliza sobre el cuerpo cuando esta en pantalla, en px.")]
@@ -40,15 +42,19 @@ public class GhostBodyPointer : MonoBehaviour
     float _progress;
 
     static Sprite _generatedArrow;
+    Sprite _overrideSprite;
 
-    public void Configure(Character body)
+    /// <summary>Configura y construye el puntero. Lo llama GhostModeController, que expone estos
+    /// valores en el inspector (sprite/tamaño/colores) porque el fantasma se crea en runtime.
+    /// sprite null => usa el triangulo generado por defecto. size &lt;= 0 => conserva el default.</summary>
+    public void Configure(Character body, Sprite sprite, float size, Color idle, Color reviving)
     {
         _bodyCharacter = body;
         _body = body != null ? body.transform : null;
-    }
-
-    void Awake()
-    {
+        _overrideSprite = sprite;
+        if (size > 0f) markerSize = size;
+        idleColor = idle;
+        revivingColor = reviving;
         Build();
     }
 
@@ -86,7 +92,7 @@ public class GhostBodyPointer : MonoBehaviour
         _markerRt.sizeDelta = new Vector2(markerSize, markerSize);
 
         _markerImg = markerGo.AddComponent<Image>();
-        _markerImg.sprite = GeneratedArrow();
+        _markerImg.sprite = _overrideSprite != null ? _overrideSprite : GeneratedArrow();
         _markerImg.color = idleColor;
         _markerImg.raycastTarget = false;
         _markerImg.preserveAspect = true;

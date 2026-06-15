@@ -22,6 +22,20 @@ public class BotLocomotion : MonoBehaviour
 
     public LayerMask WallLayer => wallLayer;
 
+    [Header("Clearance (anti-esquina, runtime)")]
+    [Tooltip("Distancia (u) a la que el bot empieza a despegarse de un muro. Aprox = radio del cuerpo del bot + un margen. Funciona en pasillos angostos: muros opuestos se cancelan y el bot queda centrado; en una esquina interior lo empuja hacia afuera para rodearla.")]
+    [SerializeField] float wallAvoidDistance = 0.6f;
+    [Tooltip("Peso de la repulsion de muros vs la direccion del path. 0 = sin evasion. ~0.6 redondea esquinas sin impedir entrar por puertas.")]
+    [SerializeField] float wallAvoidStrength = 0.6f;
+
+    // 8 direcciones (cardinales + diagonales) para sondear muros alrededor del bot.
+    static readonly Vector2[] _avoidDirs =
+    {
+        Vector2.right, Vector2.up, Vector2.left, Vector2.down,
+        new Vector2( 0.7071068f,  0.7071068f), new Vector2(-0.7071068f, 0.7071068f),
+        new Vector2(-0.7071068f, -0.7071068f), new Vector2( 0.7071068f,-0.7071068f),
+    };
+
 #if ASTAR_EXISTS
     AIPath _ai;
     AIPath AI
@@ -66,10 +80,26 @@ public class BotLocomotion : MonoBehaviour
             ai.pickNextWaypointDist = 0.35f;
         }
 
-        // Agregar SimpleSmoothModifier al Seeker si no existe para suavizar waypoints
+        // El SimpleSmoothModifier NO es consciente de muros y redondea las curvas hacia el
+        // interior del giro (mete el path en la esquina). Lo quitamos y usamos RaycastModifier
+        // (raycast FINO 2D) que solo simplifica/endereza el path; el clearance contra muros y
+        // esquinas lo da el steering de evasion en GetSteeringDirection (que SI funciona en
+        // pasillos angostos, a diferencia de la erosion del grafo).
         var seeker = GetComponent<Pathfinding.Seeker>();
-        if (seeker != null && GetComponent<Pathfinding.SimpleSmoothModifier>() == null)
-            gameObject.AddComponent<Pathfinding.SimpleSmoothModifier>();
+        if (seeker != null)
+        {
+            var smooth = GetComponent<Pathfinding.SimpleSmoothModifier>();
+            if (smooth != null) Destroy(smooth);
+
+            var ray = GetComponent<Pathfinding.RaycastModifier>();
+            if (ray == null) ray = gameObject.AddComponent<Pathfinding.RaycastModifier>();
+            ray.useRaycasting      = true;
+            ray.use2DPhysics       = true;
+            ray.thickRaycast       = false; // fino: no bloquea simplificacion en pasillos angostos
+            ray.mask               = wallLayer.value == -1 ? GameLayers.WallMask : wallLayer;
+            ray.useGraphRaycasting = false; // pro-only; usamos physics 2D
+            ray.quality            = Pathfinding.RaycastModifier.Quality.Medium;
+        }
 #endif
         // El default ~0 (Everything) rompe LOS porque el raycast pega en el propio
         // collider del bot, suelo, etc. Resolver a la capa "Wall" si existe.
@@ -120,7 +150,7 @@ public class BotLocomotion : MonoBehaviour
         var ai = AI;
         if (ai == null || !_hasDestination) return Vector2.zero;
         Vector2 v = ai.desiredVelocity;
-        if (v.sqrMagnitude > 0.01f) return v.normalized;
+        if (v.sqrMagnitude > 0.01f) return BlendWallAvoidance(v.normalized);
         return Vector2.zero;
 #else
         // Fallback: A* no compilado en este Build Profile. Movimiento directo
@@ -129,8 +159,35 @@ public class BotLocomotion : MonoBehaviour
         if (!_hasDestination) return Vector2.zero;
         Vector2 dir = (Vector2)_directDestination - (Vector2)transform.position;
         if (dir.sqrMagnitude < 0.04f) return Vector2.zero;
-        return dir.normalized;
+        return BlendWallAvoidance(dir.normalized);
 #endif
+    }
+
+    /// <summary>
+    /// Mezcla la direccion del path con una repulsion de los muros cercanos para que el
+    /// collider del bot no se atore en esquinas. Sondea 8 direcciones; cada muro dentro de
+    /// wallAvoidDistance aporta un empuje opuesto proporcional a su cercania. En un pasillo
+    /// simetrico los empujes opuestos se cancelan (el bot queda centrado); en una esquina
+    /// interior el empuje neto lo despega hacia afuera. A diferencia de la erosion del grafo,
+    /// NO vuelve incaminables los pasillos angostos.
+    /// </summary>
+    Vector2 BlendWallAvoidance(Vector2 pathDir)
+    {
+        if (wallAvoidStrength <= 0f || wallAvoidDistance <= 0f) return pathDir;
+
+        Vector2 pos       = transform.position;
+        Vector2 repulsion = Vector2.zero;
+        for (int i = 0; i < _avoidDirs.Length; i++)
+        {
+            var hit = Physics2D.Raycast(pos, _avoidDirs[i], wallAvoidDistance, wallLayer);
+            if (hit.collider == null) continue;
+            float closeness = 1f - (hit.distance / wallAvoidDistance); // 0 lejos .. 1 pegado
+            repulsion -= _avoidDirs[i] * closeness;
+        }
+
+        if (repulsion.sqrMagnitude < 0.0001f) return pathDir;
+        Vector2 blended = pathDir + repulsion.normalized * wallAvoidStrength;
+        return blended.sqrMagnitude > 0.0001f ? blended.normalized : pathDir;
     }
 
     public bool HasReachedDestination(float threshold = 0.5f)

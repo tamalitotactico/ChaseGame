@@ -12,6 +12,7 @@ public class HastedEffect : StatusEffect
     readonly float _multiplier;
 
     public override float SpeedModifier => _multiplier;
+    public override string IconId       => "haste";
 
     /// <param name="duration">Duracion del buff en segundos.</param>
     /// <param name="speedMultiplier">Multiplicador de velocidad (clampado a >= 1).</param>

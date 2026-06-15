@@ -19,6 +19,9 @@ using UnityEngine;
 /// </summary>
 public class AbilityIndicatorView : MonoBehaviour
 {
+    [Tooltip("Mapeo IndicatorShape -> prefab. Si la view se agrega en runtime, GameManager lo inyecta via SetRegistry.")]
+    [SerializeField] IndicatorRegistry registry;
+
     Character          _character;
     AbilityController  _ac;
     AimIndicator       _current;
@@ -27,6 +30,12 @@ public class AbilityIndicatorView : MonoBehaviour
     void Awake()
     {
         _character = GetComponent<Character>();
+    }
+
+    /// <summary>Inyeccion del registro cuando la view se agrega en runtime (GameManager.SpawnOne).</summary>
+    public void SetRegistry(IndicatorRegistry r)
+    {
+        if (r != null) registry = r;
     }
 
     void OnEnable()
@@ -52,13 +61,20 @@ public class AbilityIndicatorView : MonoBehaviour
     {
         DestroyCurrent();
         var data = _ac.GetAbilityData(slot);
-        if (data == null || data.indicatorPrefab == null) return;
+        if (data == null) return;
+
+        // Auto-seleccion: el prefab se resuelve de la forma derivada (AimStyle -> ResolvedShape) via el
+        // registro. Un AbilityData puede forzar un prefab puntual con su campo 'indicatorPrefab' (override).
+        var prefab = data.indicatorPrefab != null
+            ? data.indicatorPrefab
+            : (registry != null ? registry.Resolve(data.ResolvedShape) : null);
+        if (prefab == null) return;
 
         // instantiateInWorldSpace=true hace que el indicador preserve el scale/rotation/position
         // del prefab en WORLD space, ignorando el lossyScale del Character. Sin esto, si el
         // Character tiene scale != 1 (comun en sprites), el indicador hereda esa escala
         // y las dimensiones nunca son exactas al valor de IndicatorRange/Radius/Width.
-        var go = (GameObject)Instantiate(data.indicatorPrefab, _character.transform, true);
+        var go = (GameObject)Instantiate(prefab, _character.transform, true);
         _current = go.GetComponent<AimIndicator>();
         if (_current == null)
         {
@@ -68,9 +84,7 @@ public class AbilityIndicatorView : MonoBehaviour
         }
         _current.Begin(_character, data);
         // Tick inicial inmediato para evitar 1-frame de indicador descolocado.
-        _current.Tick(_character.transform.position, _ac.ActiveAimer != null
-            ? _ac.ActiveAimer.CurrentDirection
-            : _character.FacingDirection);
+        _current.Tick(BuildState());
     }
 
     void OnAimStop()
@@ -89,6 +103,21 @@ public class AbilityIndicatorView : MonoBehaviour
     void Update()
     {
         if (_current == null || _ac == null || _ac.ActiveAimer == null) return;
-        _current.Tick(_character.transform.position, _ac.ActiveAimer.CurrentDirection);
+        _current.Tick(BuildState());
+    }
+
+    /// <summary>Arma el estado de aim para el indicador desde el aimer activo (direccion + target + cast).</summary>
+    AimIndicatorState BuildState()
+    {
+        var aimer = _ac != null ? _ac.ActiveAimer : null;
+        var s = new AimIndicatorState
+        {
+            Origin    = _character.transform.position,
+            Direction = aimer != null ? aimer.CurrentDirection : _character.FacingDirection,
+            CastProgress = aimer != null ? aimer.Progress : 0f,
+        };
+        var t = aimer != null ? aimer.CurrentTarget : null;
+        if (t.HasValue) { s.Target = t.Value; s.HasTarget = true; }
+        return s;
     }
 }

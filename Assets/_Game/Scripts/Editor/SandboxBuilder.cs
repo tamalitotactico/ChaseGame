@@ -256,11 +256,14 @@ public static class SandboxBuilder
         // 0.9 * nodeSize garantiza que el overlap 2D alcanza el collider.
         if (grid.collision.diameter < 0.8f)
             grid.collision.diameter = 0.9f;
-        grid.erodeIterations = 1;
+        // SIN erosion: inflar muros uniformemente vuelve incaminables los pasillos angostos
+        // (1 nodo de ancho). El clearance de esquinas se maneja en runtime con el steering
+        // de evasion de muros en BotLocomotion.GetSteeringDirection().
+        grid.erodeIterations = 0;
         astar.Scan();
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Debug.Log("[SandboxBuilder] A* grid: heightCheck=false, use2D=true, diameter=" +
-                  grid.collision.diameter + ", erodeIterations=1. Re-scaneado. Guarda la escena.");
+                  grid.collision.diameter + ", erodeIterations=0 (clearance en runtime). Re-scaneado. Guarda la escena.");
 #else
         Debug.LogWarning("[SandboxBuilder] ASTAR_EXISTS no definido.");
 #endif

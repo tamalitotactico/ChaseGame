@@ -33,5 +33,7 @@ public class RemnantAbilityData : AbilityData
 
     public override float IndicatorRadius => effectRadius;
 
+    public override AimStyle Aim => AimStyle.SelfAoE;
+
     public override Ability CreateRuntime() => new RemnantAbility(this);
 }

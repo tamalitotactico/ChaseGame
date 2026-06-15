@@ -2,14 +2,18 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// Boton de habilidad estilo Brawl Stars. Soporta dos modos segun allowAim:
+/// Boton de habilidad estilo Brawl Stars. Soporta dos modos. El modo NO es estatico:
+/// se DERIVA en runtime de la habilidad bindeada en este slot (Ability.RequiresAim) cada vez
+/// que se bindea al jugador local, porque el roster es data-driven y el mismo indice de slot
+/// puede ser tap-only o apuntable segun el personaje equipado. El campo serializado 'allowAim'
+/// solo es fallback antes de bindear. Los dos modos:
 ///
-/// allowAim = false (abilities tap-only como Remnant/señuelo):
+/// modo tap-only (RequiresAim=false; abilities como Remnant/señuelo):
 ///   - Press: arma la habilidad (notifica al PlayerBrain).
 ///   - Drag: ignorado, el handle no se mueve, no se apunta.
 ///   - Release: dispara. El TapAimer del controller ejecuta al instante.
 ///
-/// allowAim = true (abilities apuntables como FearProjectile, TeleportSmash):
+/// modo apuntable (RequiresAim=true; abilities como FearProjectile, TeleportSmash):
 ///   - Press: arma. NO ejecuta nada todavia.
 ///   - Drag: mueve el handle dentro del background (mismo gesto que el
 ///     VirtualJoystick de movimiento). La direccion normalizada se manda al
@@ -32,7 +36,10 @@ public class AimableAbilityButton : MonoBehaviour,
     [Tooltip("Indice del slot de habilidad (0, 1, 2).")]
     [SerializeField] int slot;
 
-    [Tooltip("True si la habilidad acepta drag-aim. Si es false, drag se ignora y la habilidad funciona como tap-only.")]
+    [Tooltip("FALLBACK solamente. En runtime el modo de aim se DERIVA de la habilidad bindeada en este " +
+             "slot (Ability.RequiresAim): el roster es data-driven y el mismo slot puede ser tap-only o " +
+             "apuntable segun el personaje equipado. Este valor solo se usa antes de bindear / si el slot " +
+             "no tiene habilidad resuelta.")]
     [SerializeField] bool allowAim = true;
 
     [Header("Joystick layout (igual que VirtualJoystick)")]
@@ -48,7 +55,9 @@ public class AimableAbilityButton : MonoBehaviour,
     [Tooltip("Distancia minima en pixels para considerar drag-aim. Bajo este umbral se interpreta como 'sin aim' (cancela en abilities apuntables o sirve para tap puro).")]
     [SerializeField] float deadzonePx = 8f;
 
-    PlayerBrain   _pb;
+    PlayerBrain       _pb;
+    AbilityController _ac;
+    bool              _effectiveAllowAim;   // derivado de la habilidad del slot; cae a 'allowAim' si no hay
     bool          _down;
     RectTransform _rt;
     Camera        _eventCam;
@@ -58,12 +67,17 @@ public class AimableAbilityButton : MonoBehaviour,
         _rt = (RectTransform)transform;
         if (background == null) background = _rt;
         if (handle != null) handle.localPosition = Vector3.zero;
+        _effectiveAllowAim = allowAim;       // fallback hasta bindear la habilidad real del slot
     }
 
     void OnEnable()
     {
         EventBus.Subscribe<CharacterSpawnedEvent>(OnSpawned);
         if (handle != null) handle.localPosition = Vector3.zero;
+        // Si este boton se re-activo DESPUES del spawn (ej. AbilityHUD prende el Slot_R/ultimate al
+        // pasar a Hunter, ya reaccionando al CharacterSpawnedEvent), nunca recibiria ese evento y la
+        // habilidad quedaria sin bindear. Hacemos pull de la ref retenida del jugador local.
+        if (PlayerBrain.Local != null) BindCharacter(PlayerBrain.Local.GetComponent<Character>());
     }
 
     void OnDisable()
@@ -75,6 +89,7 @@ public class AimableAbilityButton : MonoBehaviour,
             _pb.SetAimInput(Vector2.zero);
         }
         _pb   = null;
+        _ac   = null;
         _down = false;
         if (handle != null) handle.localPosition = Vector3.zero;
     }
@@ -82,8 +97,31 @@ public class AimableAbilityButton : MonoBehaviour,
     void OnSpawned(CharacterSpawnedEvent e)
     {
         if (e.Character == null) return;
-        var pb = e.Character.GetComponent<PlayerBrain>();
-        if (pb != null) _pb = pb;
+        BindCharacter(e.Character);
+    }
+
+    /// <summary>Bindea al jugador local y deriva el modo de aim del slot. Ignora no-jugadores (bots).</summary>
+    void BindCharacter(Character c)
+    {
+        if (c == null) return;
+        var pb = c.GetComponent<PlayerBrain>();
+        if (pb == null) return;             // solo el jugador local tiene PlayerBrain
+        _pb = pb;
+        _ac = c.Abilities;
+        RefreshAimMode();
+    }
+
+    /// <summary>
+    /// Deriva si este slot acepta aim-drag de la habilidad realmente bindeada (Ability.RequiresAim).
+    /// El roster es data-driven: el mismo indice de slot puede ser tap-only o apuntable segun el
+    /// personaje equipado, asi que un 'allowAim' estatico por boton no puede ser correcto para todos.
+    /// </summary>
+    void RefreshAimMode()
+    {
+        _effectiveAllowAim = allowAim;      // fallback
+        var abilities = _ac != null ? _ac.Abilities : null;
+        if (abilities != null && slot >= 0 && slot < abilities.Length && abilities[slot] != null)
+            _effectiveAllowAim = abilities[slot].RequiresAim;
     }
 
     public void OnPointerDown(PointerEventData e)
@@ -101,7 +139,7 @@ public class AimableAbilityButton : MonoBehaviour,
         if (!_down || _pb == null) return;
 
         // Si la habilidad es tap-only, ignorar el drag por completo.
-        if (!allowAim)
+        if (!_effectiveAllowAim)
         {
             if (handle != null) handle.localPosition = Vector3.zero;
             return;

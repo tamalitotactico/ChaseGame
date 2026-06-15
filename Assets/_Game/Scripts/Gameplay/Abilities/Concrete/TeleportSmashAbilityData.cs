@@ -61,5 +61,8 @@ public class TeleportSmashAbilityData : AbilityData
     public override float IndicatorRange   => teleportDistance;
     public override float IndicatorRadius  => aoeRadius;
 
+    public override AimStyle Aim => AimStyle.Direction;
+    public override IndicatorShape Shape => IndicatorShape.ArrowAoE; // flecha de TP + AoE de aterrizaje
+
     public override Ability CreateRuntime() => new TeleportSmashAbility(this);
 }

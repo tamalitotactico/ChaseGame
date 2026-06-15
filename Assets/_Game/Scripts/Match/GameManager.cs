@@ -23,6 +23,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject hunterPrefab;
     [SerializeField] GameObject preyPrefab;
 
+    [Tooltip("Mapeo IndicatorShape -> prefab para los indicadores de aim del jugador local.")]
+    [SerializeField] IndicatorRegistry indicatorRegistry;
+
     [Header("Spawns")]
     [SerializeField] Transform[] hunterSpawns;
     [SerializeField] Transform[] preySpawns;
@@ -74,6 +77,9 @@ public class GameManager : MonoBehaviour
         ServiceLocator.Register<ISpawnService>(new LocalSpawnService());
         ServiceLocator.Register<IAuthorityContext>(LocalAuthority.Instance);
         ServiceLocator.Register<IWorldQueryService>(new LocalWorldQuery(this));
+        // Sesion de partida: decide la composicion (cuantos por bando + que es cada slot).
+        // Hoy siempre local (Solo y multiplayer-stub). Phase 3: elegir FusionMatchSession por MatchConfig.Mode.
+        ServiceLocator.Register<IMatchSession>(new LocalMatchSession());
         States = new MatchStateMachine(this);
     }
 
@@ -91,6 +97,7 @@ public class GameManager : MonoBehaviour
         ServiceLocator.Unregister<ISpawnService>();
         ServiceLocator.Unregister<IAuthorityContext>();
         ServiceLocator.Unregister<IWorldQueryService>();
+        ServiceLocator.Unregister<IMatchSession>();
     }
 
     void OnDestroy()
@@ -110,10 +117,12 @@ public class GameManager : MonoBehaviour
         // arrancamos directo con el rol elegido; si no, mostramos el lobby.
         if (MatchConfig.Configured)
         {
-            // Entrada desde el Meta (JUGAR): el rol se asigna AL AZAR. Se persiste en MatchConfig
-            // para coherencia: el rematch es in-place (no re-corre Start) y reusa este mismo rol.
-            playerTeam = Random.value < 0.5f ? CharacterTeam.Hunter : CharacterTeam.Prey;
-            MatchConfig.PlayerTeam = playerTeam;
+            // Entrada desde el Meta (JUGAR/MULTIJUGADOR): se respeta el rol y la composicion que el
+            // jugador eligio en MatchSetup (MatchConfig). Antes se randomizaba el rol aqui; el random
+            // se reactivara con matchmaking real. El rematch in-place reusa estos valores.
+            playerTeam   = MatchConfig.PlayerTeam;
+            huntersTotal = MatchConfig.HuntersTotal;
+            preysTotal   = MatchConfig.PreysTotal;
             States.ChangeState(new StartingState());
         }
         else if (autoStart)
@@ -190,31 +199,28 @@ public class GameManager : MonoBehaviour
         States.Tick(Time.deltaTime);
     }
 
-    /// <summary>Spawna jugador + bots segun la composicion configurada.</summary>
+    /// <summary>Spawna humano local + bots (y, con Fusion, humanos remotos) segun la composicion
+    /// de la IMatchSession. La sesion decide que es cada slot; este metodo no sabe de red.</summary>
     public void SpawnMatchEntities()
     {
         Hunters.Clear();
         Preys.Clear();
 
-        bool playerIsHunter = playerTeam == CharacterTeam.Hunter;
+        // Fallback a LocalMatchSession si no hubiera nadie registrado (defensivo).
+        var session = ServiceLocator.Resolve<IMatchSession>() ?? new LocalMatchSession();
 
         // Hunter pool
         for (int i = 0; i < huntersTotal; i++)
-        {
-            bool isPlayer = playerIsHunter && i == 0;
-            SpawnOne(CharacterTeam.Hunter, i, isPlayer);
-        }
+            SpawnOne(CharacterTeam.Hunter, i, session.SlotKind(CharacterTeam.Hunter, i));
 
         // Prey pool
         for (int i = 0; i < preysTotal; i++)
-        {
-            bool isPlayer = !playerIsHunter && i == 0;
-            SpawnOne(CharacterTeam.Prey, i, isPlayer);
-        }
+            SpawnOne(CharacterTeam.Prey, i, session.SlotKind(CharacterTeam.Prey, i));
     }
 
-    void SpawnOne(CharacterTeam team, int index, bool isPlayer)
+    void SpawnOne(CharacterTeam team, int index, MatchSlotKind kind)
     {
+        bool isPlayer = kind == MatchSlotKind.LocalPlayer;
         GameObject prefab = team == CharacterTeam.Hunter ? hunterPrefab : preyPrefab;
         if (prefab == null) { Debug.LogError($"[GameManager] Falta prefab de {team}"); return; }
 
@@ -223,28 +229,42 @@ public class GameManager : MonoBehaviour
             ? spawns[index % spawns.Length].position
             : Vector3.zero;
 
-        var go = Instantiate(prefab, pos, Quaternion.identity);
+        // Resuelve el personaje (CharacterData) + skin del slot: el player usa el equipado (loadout
+        // persistente del Meta); los bots, uno al azar de su bando. Data-driven: los 8 personajes
+        // viven sobre 2 prefabs base via Character.SetData.
+        ResolveLoadout(team, isPlayer, out var data, out var skin);
+
+        var spawnService = ServiceLocator.Resolve<ISpawnService>();
+        var go = spawnService != null
+            ? spawnService.Spawn(prefab, pos, Quaternion.identity)
+            : Instantiate(prefab, pos, Quaternion.identity);
         go.name = $"{team}{index}{(isPlayer ? "_Player" : "_Bot")}";
         var character = go.GetComponent<Character>();
         if (character == null) { Debug.LogError($"[GameManager] Prefab {prefab.name} sin Character"); Destroy(go); return; }
 
-        // Aplica la skin equipada (loadout persistente del Meta) al hijo "Visual". Las skins NO
-        // afectan gameplay: solo intercambian el RuntimeAnimatorController. Ver IProfileService.
-        ApplyEquippedSkin(go, team);
+        // Inyecta los stats/abilities del personaje elegido sobre el prefab base.
+        if (data != null) character.SetData(data);
 
-        // Brain + AI components
+        // Aplica la skin (visual; NO afecta gameplay: solo el RuntimeAnimatorController).
+        ApplySkin(go, skin);
+
+        // Brain + AI components segun el kind del slot.
+        // LocalPlayer -> PlayerBrain + indicadores. Bot -> BotBrain. RemoteHuman -> TODO Fusion
+        // (brain replicado); hoy LocalMatchSession nunca lo produce, asi que cae a bot defensivamente.
         IBrain brain;
-        if (isPlayer)
+        if (kind == MatchSlotKind.LocalPlayer)
         {
             var pb = go.GetComponent<PlayerBrain>() ?? go.AddComponent<PlayerBrain>();
             brain = pb;
             // Indicador visual de aim (linea/circulo/cono) — solo player local.
             // Lo agregamos aqui en runtime para no depender de su presencia en el prefab.
-            if (go.GetComponent<AbilityIndicatorView>() == null)
-                go.AddComponent<AbilityIndicatorView>();
+            var indicatorView = go.GetComponent<AbilityIndicatorView>();
+            if (indicatorView == null) indicatorView = go.AddComponent<AbilityIndicatorView>();
+            indicatorView.SetRegistry(indicatorRegistry);
         }
         else
         {
+            // Bot (y, por ahora, RemoteHuman hasta que exista el brain de Fusion).
             EnsureAIComponents(go);
             var bb = go.GetComponent<BotBrain>() ?? go.AddComponent<BotBrain>();
             brain = bb;
@@ -259,17 +279,42 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Intercambia el RuntimeAnimatorController del Animator del personaje por el de la skin
-    /// equipada (rol correspondiente), leida de IProfileService. Como CharacterAnimator cachea
-    /// los hashes de estado en su Awake (ya corrido al Instantiate), se vuelve a resolver la tabla
-    /// con RebuildStateTable tras el swap. Si no hay servicio/skin/controller, no toca nada.
+    /// Resuelve el CharacterData + Skin de un slot. El player usa el personaje EQUIPADO del loadout
+    /// (IProfileService); los bots, uno AL AZAR de su bando del catalogo. Si no hay perfil o el
+    /// personaje no tiene gameplayData, devuelve null (el prefab usa su data por defecto).
     /// </summary>
-    void ApplyEquippedSkin(GameObject go, CharacterTeam team)
+    void ResolveLoadout(CharacterTeam team, bool isPlayer, out CharacterData data, out Skin skin)
     {
+        data = null; skin = null;
         var profile = ServiceLocator.Resolve<IProfileService>();
         if (profile == null) return;
 
-        var skin = profile.GetEquippedSkin(team);
+        MetaCharacter mc = isPlayer
+            ? profile.GetEquippedCharacter(team)
+            : PickRandomCharacter(profile.Catalog, team);
+        if (mc == null) return;
+
+        data = mc.gameplayData;
+        skin = isPlayer ? (profile.GetEquippedSkin(team) ?? mc.DefaultSkin) : mc.DefaultSkin;
+    }
+
+    /// <summary>Un MetaCharacter al azar del bando con gameplayData != null (para bots).</summary>
+    static MetaCharacter PickRandomCharacter(MetaCatalog catalog, CharacterTeam team)
+    {
+        if (catalog == null) return null;
+        var pool = new List<MetaCharacter>();
+        foreach (var c in catalog.CharactersForRole(team))
+            if (c != null && c.gameplayData != null) pool.Add(c);
+        return pool.Count > 0 ? pool[Random.Range(0, pool.Count)] : null;
+    }
+
+    /// <summary>
+    /// Intercambia el RuntimeAnimatorController del Animator por el de la skin dada. Como
+    /// CharacterAnimator cachea los hashes en Awake, se reconstruye la tabla tras el swap.
+    /// Si la skin o el controller son null, no toca nada (conserva el del prefab/personaje).
+    /// </summary>
+    void ApplySkin(GameObject go, Skin skin)
+    {
         if (skin == null || skin.animatorController == null) return;
 
         var animator = go.GetComponentInChildren<Animator>();

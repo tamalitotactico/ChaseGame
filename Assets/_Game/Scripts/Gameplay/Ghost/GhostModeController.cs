@@ -17,6 +17,11 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class GhostModeController : MonoBehaviour
 {
+    [Header("Spawn")]
+    [Tooltip("Prefab del fantasma (SpriteRenderer + GhostController + GhostBodyPointer). Si es null, se " +
+             "construye en runtime. Asignarlo rutea el spawn por ISpawnService (prep Fusion Runner.Spawn).")]
+    [SerializeField] GameObject ghostPrefab;
+
     [Header("Movimiento")]
     [Tooltip("Factor sobre la velocidad base del prey. >1 = el fantasma es mas rapido.")]
     [SerializeField] float ghostSpeedBonus = 1.15f;
@@ -29,12 +34,27 @@ public class GhostModeController : MonoBehaviour
     [Tooltip("Sorting order del sprite del fantasma. Debe ir SOBRE el FogOverlay (20).")]
     [SerializeField] int ghostSortingOrder = 25;
 
+    [Header("Puntero al cuerpo (editable aqui porque el fantasma se construye en runtime)")]
+    [Tooltip("Sprite del puntero/flecha al cuerpo. Vacio = triangulo generado por defecto.")]
+    [SerializeField] Sprite pointerSprite;
+    [Tooltip("Tamaño del puntero en px.")]
+    [SerializeField] float pointerSize = 44f;
+    [Tooltip("Color del puntero en estado normal.")]
+    [SerializeField] Color pointerIdleColor = new Color(0.7f, 0.85f, 1f, 0.9f);
+    [Tooltip("Color del puntero cuando un aliado te esta reviviendo.")]
+    [SerializeField] Color pointerRevivingColor = new Color(0.3f, 1f, 0.45f, 1f);
+
     CameraFollow       _camera;
     HybridInputManager _input;
 
     Character    _bodyCharacter; // cuerpo downed del jugador local
-    VisionSource _bodyVision;
     GameObject   _ghost;
+
+    /// <summary>True si el jugador local esta controlando el fantasma (downed). Lo usan el emisor de
+    /// emotes y el presenter de burbujas para resolver la posicion de render (matriz de visibilidad).</summary>
+    public bool IsGhostActive => _ghost != null;
+    /// <summary>Transform del fantasma activo, o null si no hay fantasma.</summary>
+    public Transform GhostTransform => _ghost != null ? _ghost.transform : null;
 
     void Awake()
     {
@@ -82,19 +102,31 @@ public class GhostModeController : MonoBehaviour
     void SpawnGhost(Character body)
     {
         _bodyCharacter = body;
-        _bodyVision = body.GetComponent<VisionSource>();
         if (_input == null) _input = Object.FindAnyObjectByType<HybridInputManager>();
 
         float baseSpeed = body.Motor != null ? body.Motor.MaxSpeed : 4f;
         float speed = baseSpeed * Mathf.Max(0.1f, ghostSpeedBonus);
 
-        _ghost = new GameObject("PlayerGhost");
-        _ghost.transform.position = body.transform.position;
+        Vector3 pos = body.transform.position;
+        if (ghostPrefab != null)
+        {
+            var spawn = ServiceLocator.Resolve<ISpawnService>();
+            _ghost = spawn != null
+                ? spawn.Spawn(ghostPrefab, pos, Quaternion.identity)
+                : Instantiate(ghostPrefab, pos, Quaternion.identity);
+            _ghost.transform.position = pos;
+        }
+        else
+        {
+            _ghost = new GameObject("PlayerGhost");
+            _ghost.transform.position = pos;
+        }
 
+        // Get-or-add: funciona igual con prefab (trae los componentes) o construido en runtime.
         // Sprite del fantasma: arte dedicado si se asigno; si no, copia translucida del sprite del cuerpo.
-        var sr = _ghost.AddComponent<SpriteRenderer>();
+        var sr = _ghost.GetComponent<SpriteRenderer>() ?? _ghost.AddComponent<SpriteRenderer>();
         var bodySr = body.GetComponentInChildren<SpriteRenderer>(true);
-        sr.sprite = ghostSpriteOverride != null ? ghostSpriteOverride : (bodySr != null ? bodySr.sprite : null);
+        sr.sprite = ghostSpriteOverride != null ? ghostSpriteOverride : (bodySr != null ? bodySr.sprite : sr.sprite);
         if (bodySr != null)
         {
             sr.flipX = bodySr.flipX;
@@ -104,33 +136,29 @@ public class GhostModeController : MonoBehaviour
         sr.color = ghostTint;
         sr.sortingOrder = ghostSortingOrder; // > FogOverlay (20): el fantasma nunca se oscurece
 
-        // Vision propia con el radio NORMAL del prey: la vision completa viaja con el fantasma.
-        var vs = _ghost.AddComponent<VisionSource>();
-        vs.visionRadius = _bodyVision != null ? _bodyVision.VisionRadius : 5f;
-
-        // Control local + puntero al cuerpo.
-        var gc = _ghost.AddComponent<GhostController>();
+        // Control local + puntero al cuerpo (config editable desde este componente).
+        var gc = _ghost.GetComponent<GhostController>() ?? _ghost.AddComponent<GhostController>();
         gc.Configure(speed, body, _input);
 
-        var ptr = _ghost.AddComponent<GhostBodyPointer>();
-        ptr.Configure(body);
+        var ptr = _ghost.GetComponent<GhostBodyPointer>() ?? _ghost.AddComponent<GhostBodyPointer>();
+        ptr.Configure(body, pointerSprite, pointerSize, pointerIdleColor, pointerRevivingColor);
 
-        // Reapuntar camara y niebla al fantasma.
+        // Camara sigue al fantasma y la niebla se APAGA: el jugador downed ve TODO el mapa.
         if (_camera != null) _camera.SetTarget(_ghost.transform);
-        if (FogOfWarManager.Instance != null) FogOfWarManager.Instance.SetPrimarySource(vs);
+        if (FogOfWarManager.Instance != null) FogOfWarManager.Instance.SetRevealAll(true);
     }
 
     void ExitGhost()
     {
-        // Devolver camara y niebla al cuerpo (si sigue existiendo).
-        if (_bodyCharacter != null)
+        // Restaurar niebla y devolver la camara al cuerpo (si sigue existiendo).
+        if (FogOfWarManager.Instance != null) FogOfWarManager.Instance.SetRevealAll(false);
+        if (_bodyCharacter != null && _camera != null) _camera.SetTarget(_bodyCharacter.transform);
+        if (_ghost != null)
         {
-            if (_camera != null) _camera.SetTarget(_bodyCharacter.transform);
-            if (FogOfWarManager.Instance != null && _bodyVision != null)
-                FogOfWarManager.Instance.SetPrimarySource(_bodyVision);
+            var spawn = ServiceLocator.Resolve<ISpawnService>();
+            if (spawn != null) spawn.Despawn(_ghost); else Destroy(_ghost);
+            _ghost = null;
         }
-        if (_ghost != null) { Destroy(_ghost); _ghost = null; }
         _bodyCharacter = null;
-        _bodyVision = null;
     }
 }

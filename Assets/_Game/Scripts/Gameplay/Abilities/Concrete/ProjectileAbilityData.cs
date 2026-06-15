@@ -13,6 +13,9 @@ public class ProjectileAbilityData : AbilityData
     [Tooltip("Distancia maxima antes de auto-destruirse.")]
     public float range = 6f;
 
+    [Tooltip("Radio del proyectil (u): fuente unica de collider de impacto + wall-sensor (mitad) + sprite + ancho del indicador.")]
+    public float projectileRadius = 0.08f;
+
     [Tooltip("Dano al impactar.")]
     public int damage = 1;
 
@@ -21,6 +24,9 @@ public class ProjectileAbilityData : AbilityData
     public AudioCue sfxOnHit;
 
     public override float IndicatorRange => range;
+    public override float ProjectileRadius => projectileRadius;
+
+    public override AimStyle Aim => AimStyle.Direction;
 
     public override Ability CreateRuntime() => new ProjectileAbility(this);
 }

@@ -9,6 +9,16 @@ public sealed class AreaAimer : Aimer
     readonly float _maxRange;
     Vector2 _targetWorld;
 
+    public override Vector2 CurrentDirection
+    {
+        get
+        {
+            Vector2 d = _targetWorld - Ctx.OwnerPosition;
+            return d.sqrMagnitude > 0.0001f ? d.normalized : base.CurrentDirection;
+        }
+    }
+    public override Vector2? CurrentTarget => _targetWorld;
+
     public AreaAimer(float maxRange)
     {
         _maxRange = maxRange;

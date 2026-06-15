@@ -61,6 +61,12 @@ public abstract class Aimer
     public virtual UnityEngine.Vector2 CurrentDirection
         => Ctx.FacingDirection.sqrMagnitude > 0f ? Ctx.FacingDirection : UnityEngine.Vector2.right;
 
+    /// <summary>
+    /// Punto del mundo apuntado, para indicadores de AREA/posicion (AoE en el punto real, no a
+    /// maxRange). null en aimers puramente direccionales. Lo lee AbilityIndicatorView.
+    /// </summary>
+    public virtual UnityEngine.Vector2? CurrentTarget => null;
+
     public void Begin(in AbilityContext ctx)
     {
         Ctx = ctx;

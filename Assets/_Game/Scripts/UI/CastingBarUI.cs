@@ -32,6 +32,8 @@ public class CastingBarUI : MonoBehaviour
     void OnEnable()
     {
         EventBus.Subscribe<CharacterSpawnedEvent>(OnSpawned);
+        // Pull de la ref retenida por si este binder se activo despues del spawn (ver PlayerBrain.Local).
+        if (PlayerBrain.Local != null) Bind(PlayerBrain.Local.GetComponent<Character>());
     }
 
     void OnDisable()

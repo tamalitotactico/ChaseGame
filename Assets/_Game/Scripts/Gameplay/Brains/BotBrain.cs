@@ -123,6 +123,8 @@ public class BotBrain : MonoBehaviour, IBrain
             // Prey derribado: el filtro re-evaluado en cada Patrol/Chase/Attack
             // tick devuelve null o el siguiente Prey vivo.
             if (c == null || !c.IsTargetable) continue;
+            // Ocultamiento por estado: un invisible no se percibe; un camuflado solo dentro de su radio.
+            if (!StateVisibility.IsPerceivableBy(c, self)) continue;
             Vector2 cp = c.transform.position;
             float sqr = (cp - myPos).sqrMagnitude;
             if (sqr > visSqr) continue;
@@ -194,6 +196,8 @@ public class BotBrain : MonoBehaviour, IBrain
         Vector2 from = Position;
         Vector2 to   = t.position;
         if ((to - from).sqrMagnitude > tuning.visionRange * tuning.visionRange) return false;
+        // Si el objetivo se oculto (invisible/camuflaje fuera de radio) el bot pierde el contacto.
+        if (t.TryGetComponent<Character>(out var tc) && !StateVisibility.IsPerceivableBy(tc, self)) return false;
         return Loco.HasLineOfSight(from, to);
     }
 }

@@ -39,7 +39,8 @@ public class CharacterHealth : MonoBehaviour
         if (!IsAlive) return false;
         if (IsInvulnerable && !info.IgnoreInvulnerability) return false;
 
-        _current = Mathf.Max(0, _current - Mathf.Max(0, info.Amount));
+        int dmg = info.Lethal ? _current : Mathf.Max(0, info.Amount);
+        _current = Mathf.Max(0, _current - dmg);
         _invulnTimer = invulnerabilityDuration;
         OnDamaged?.Invoke(_current, maxHealth);
 

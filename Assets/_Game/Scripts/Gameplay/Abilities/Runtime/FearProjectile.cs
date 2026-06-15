@@ -9,7 +9,7 @@ using UnityEngine;
 /// Prefab requirements: Rigidbody2D (Kinematic) + Collider2D (IsTrigger=true) + FearProjectile.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class FearProjectile : MonoBehaviour
+public class FearProjectile : MonoBehaviour, IWallDestructible
 {
     Vector2   _direction;
     float     _speed;
@@ -79,13 +79,7 @@ public class FearProjectile : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (_owner != null && other.gameObject == _owner.gameObject) return;
-
-        // Wall layer: destruir
-        if (other.gameObject.layer == GameLayers.Wall)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        // Los muros los maneja ProjectileWallSensor (collider de muro mas chico que el de impacto).
 
         var c = other.GetComponentInParent<Character>();
         if (c == null || c == _owner) return;
@@ -102,6 +96,8 @@ public class FearProjectile : MonoBehaviour
         ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_sfxOnHit, transform.position);
         Destroy(gameObject);
     }
+
+    public void OnWallHit(Vector2 point) => Destroy(gameObject);
 
     static Vector2 Rotate(Vector2 v, float rad)
     {

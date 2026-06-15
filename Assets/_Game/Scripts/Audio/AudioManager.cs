@@ -28,6 +28,18 @@ public class AudioManager : MonoBehaviour, IAudioService
     [SerializeField]
     int poolSize = 20;
 
+    [Header("Defaults para clips sueltos (PlayAttached(AudioClip ...))")]
+    [Tooltip("Bus al que van los AudioClip sueltos (ej. emotes). Arrastra el grupo SFX del AudioMixer.")]
+    [SerializeField] AudioMixerGroup defaultSfxGroup;
+    [Tooltip("Distancia desde la que un clip suelto suena a volumen maximo.")]
+    [SerializeField] float clipMinDistance = 2f;
+    [Tooltip("Distancia a la que un clip suelto deja de oirse.")]
+    [SerializeField] float clipMaxDistance = 16f;
+    [Range(0f, 180f)]
+    [Tooltip("Apertura (grados) del clip espacial. Alto = casi sin paneo L/R (solo atenua por distancia), " +
+             "evita que el sonido salte de oido al caminar. 0 = paneo direccional fuerte.")]
+    [SerializeField] float clipSpread = 150f;
+
     AudioSource[] _pool;
     int _nextSlot; // indice circular para busqueda de fuente libre
 
@@ -106,6 +118,45 @@ public class AudioManager : MonoBehaviour, IAudioService
         ApplyCue(src, cue);
         src.Play();
         _attached[src] = follow; // seguir cada frame en LateUpdate
+        return new AudioHandle { Source = src };
+    }
+
+    public AudioHandle PlayAttached(AudioClip clip, Transform follow, float volume = 1f, bool spatial = true)
+    {
+        if (clip == null || follow == null) return AudioHandle.Null;
+
+        var src = GetFreeSource();
+        float z = Listener != null ? Listener.position.z : 0f;
+        var p = follow.position;
+        src.transform.position = new Vector3(p.x, p.y, z);
+
+        src.clip = clip;
+        src.volume = Mathf.Clamp01(volume);
+        src.pitch = 1f;
+        src.loop = false;
+        src.priority = 128;
+        src.outputAudioMixerGroup = defaultSfxGroup;
+
+        if (spatial)
+        {
+            // Espacial: atenua por distancia, pero con spread alto para NO panear duro a un
+            // oido (al caminar el listener-camara se desfasa del emisor y sonaba todo L/R).
+            src.spatialBlend = 1f;
+            src.rolloffMode  = AudioRolloffMode.Linear;
+            src.minDistance  = clipMinDistance;
+            src.maxDistance  = clipMaxDistance;
+            src.spread       = clipSpread;
+            _attached[src]   = follow; // seguir al emisor cada frame en LateUpdate
+        }
+        else
+        {
+            // 2D centrado: el sonido "propio" (ej. tu emote) se oye normal, sin paneo ni
+            // atenuacion. No hace falta seguir el transform.
+            src.spatialBlend = 0f;
+            src.spread       = 0f;
+        }
+
+        src.Play();
         return new AudioHandle { Source = src };
     }
 

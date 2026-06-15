@@ -54,6 +54,10 @@ public class CombatController : MonoBehaviour
         _cooldownRemaining = attackCooldown;
         OnAttackUsed?.Invoke(attackCooldown);
 
+        // Atacar rompe camuflaje/invisibilidad (Nadar, Tricky Lure).
+        if (_owner != null && _owner.StatusEffects != null)
+            _owner.StatusEffects.BreakActionSensitiveEffects();
+
         Vector2 origin = transform.position;
         var filter = new ContactFilter2D { useTriggers = Physics2D.queriesHitTriggers };
         filter.SetLayerMask(targetLayers);
@@ -66,10 +70,12 @@ public class CombatController : MonoBehaviour
             {
                 d.TakeDamage(new DamageInfo
                 {
-                    Amount    = damage,
-                    Source    = _owner,
-                    Origin    = origin,
-                    Direction = ((Vector2)col.transform.position - origin).normalized
+                    Amount          = damage,
+                    Source          = _owner,
+                    Origin          = origin,
+                    Direction       = ((Vector2)col.transform.position - origin).normalized,
+                    FromBasicAttack = true,
+                    Lethal          = _owner != null && _owner.StatusEffects != null && _owner.StatusEffects.HasLethalAttack
                 });
             }
         }

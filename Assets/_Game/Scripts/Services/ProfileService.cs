@@ -55,6 +55,17 @@ public sealed class ProfileService : IProfileService
         dirty |= SeedRole(CharacterTeam.Hunter);
         dirty |= SeedRole(CharacterTeam.Prey);
 
+        // Phase 0/dev: desbloquear TODOS los personajes del catalogo + su skin default, para poder
+        // elegir cualquiera de los 8 sin economia/shop. Cuando exista monetizacion, quitar esto.
+        if (_catalog.characters != null)
+            foreach (var c in _catalog.characters)
+            {
+                if (c == null || string.IsNullOrEmpty(c.id)) continue;
+                if (!_state.ownership.OwnsCharacter(c.id)) { _state.ownership.GrantCharacter(c.id); dirty = true; }
+                var sk = c.DefaultSkin;
+                if (sk != null && !_state.ownership.OwnsSkin(sk.id)) { _state.ownership.GrantSkin(sk.id); dirty = true; }
+            }
+
         if (_state.loadout.emoteIds == null || _state.loadout.emoteIds.Length != 3)
         {
             _state.loadout.emoteIds = new string[3];

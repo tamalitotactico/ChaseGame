@@ -7,7 +7,7 @@ using UnityEngine;
 /// El prefab debe traer: Rigidbody2D (Kinematic) + Collider2D (Is Trigger) + Projectile.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class Projectile : MonoBehaviour
+public class Projectile : MonoBehaviour, IWallDestructible
 {
     Vector2   _direction;
     float     _speed;
@@ -63,12 +63,12 @@ public class Projectile : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        // Los muros los maneja ProjectileWallSensor (collider de muro mas chico que el de impacto).
+    }
 
-        // Wall layer: destruir
-        if (other.gameObject.layer == GameLayers.Wall)
-        {
-            ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_sfxOnHit, transform.position);
-            Destroy(gameObject);
-        }
+    public void OnWallHit(Vector2 point)
+    {
+        ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_sfxOnHit, point);
+        Destroy(gameObject);
     }
 }

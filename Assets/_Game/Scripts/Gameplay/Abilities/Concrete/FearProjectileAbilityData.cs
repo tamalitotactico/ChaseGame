@@ -13,6 +13,9 @@ public class FearProjectileAbilityData : AbilityData
     [Tooltip("Distancia maxima antes de auto-destruirse.")]
     public float range = 12f;
 
+    [Tooltip("Radio del proyectil (u): fuente unica de collider de impacto + wall-sensor (mitad) + sprite + ancho del indicador.")]
+    public float projectileRadius = 0.35f;
+
     [Tooltip("Si true, el proyectil persigue al target inicial. Si false, va en linea recta.")]
     public bool homing = true;
 
@@ -35,6 +38,9 @@ public class FearProjectileAbilityData : AbilityData
     public AudioCue sfxOnHit;
 
     public override float IndicatorRange => range;
+    public override float ProjectileRadius => projectileRadius;
+
+    public override AimStyle Aim => AimStyle.Direction;
 
     public override Ability CreateRuntime() => new FearProjectileAbility(this);
 }

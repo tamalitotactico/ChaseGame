@@ -20,18 +20,30 @@ public class StatusIconDisplay : MonoBehaviour
     [Tooltip("Tamano de cada icono en pixeles (el Canvas usa PixelPerUnit=100).")]
     [SerializeField] float iconSize = 40f;
 
-    [Header("Sprites por efecto")]
-    [SerializeField] Sprite stunIcon;
-    [SerializeField] Sprite slowIcon;
-    [SerializeField] Sprite fearIcon;
-    [SerializeField] Sprite hasteIcon;
+    [System.Serializable]
+    public struct IconEntry
+    {
+        [Tooltip("Id del efecto (StatusEffect.IconId): stun/slow/fear/haste/charm/blind/camo/invisible/immune/trueform.")]
+        public string id;
+        [Tooltip("Sprite a mostrar (puede ser un slice de IconSet1).")]
+        public Sprite sprite;
+    }
+
+    [Header("Iconos por id de efecto")]
+    [Tooltip("Mapa id->sprite. Cada StatusEffect declara su IconId; aqui se le asigna el arte. " +
+             "Asignar los slices de IconSet1 a cada id en el inspector.")]
+    [SerializeField] IconEntry[] icons;
 
     StatusEffectController _fx;
     readonly Dictionary<System.Type, GameObject> _icons = new Dictionary<System.Type, GameObject>();
+    readonly Dictionary<string, Sprite> _byId = new Dictionary<string, Sprite>();
 
     void Awake()
     {
         _fx = GetComponentInParent<StatusEffectController>();
+        if (icons != null)
+            foreach (var e in icons)
+                if (!string.IsNullOrEmpty(e.id)) _byId[e.id] = e.sprite;
     }
 
     void OnEnable()
@@ -80,12 +92,9 @@ public class StatusIconDisplay : MonoBehaviour
         }
     }
 
-    Sprite SpriteFor(StatusEffect e) => e switch
+    Sprite SpriteFor(StatusEffect e)
     {
-        StunnedEffect _ => stunIcon,
-        SlowedEffect  _ => slowIcon,
-        FearedEffect  _ => fearIcon,
-        HastedEffect  _ => hasteIcon,
-        _               => null
-    };
+        var id = e != null ? e.IconId : null;
+        return !string.IsNullOrEmpty(id) && _byId.TryGetValue(id, out var s) ? s : null;
+    }
 }

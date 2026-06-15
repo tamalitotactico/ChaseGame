@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
@@ -30,10 +29,10 @@ public class HubScreen : ScreenController
     [SerializeField] Button shopButton;
     [SerializeField] Button customizeButton;
     [SerializeField] Button chestButton;
+    [Tooltip("JUGAR (Solo/Bots): arranque inmediato contra bots.")]
     [SerializeField] Button playButton;
-
-    [Header("Partida")]
-    [SerializeField] string gameplaySceneName = "00_Sandbox_TilesetTEST";
+    [Tooltip("MULTIJUGADOR: lleva a la sala de emparejamiento (host puede llenar con bots).")]
+    [SerializeField] Button multiplayerButton;
 
     CharacterTeam _shownRole = CharacterTeam.Prey;
 
@@ -44,7 +43,8 @@ public class HubScreen : ScreenController
         if (customizeButton != null) customizeButton.onClick.AddListener(() => Screens?.Show("Customize"));
         if (chestButton != null)     chestButton.onClick.AddListener(() => Screens?.Show("Chest"));
         if (modeButton != null)      modeButton.onClick.AddListener(() => Screens?.Show("GameMode"));
-        if (playButton != null)      playButton.onClick.AddListener(Play);
+        if (playButton != null)        playButton.onClick.AddListener(() => OpenMatchSetup(MatchConfig.PlayMode.Solo));
+        if (multiplayerButton != null) multiplayerButton.onClick.AddListener(() => OpenMatchSetup(MatchConfig.PlayMode.Multiplayer));
     }
 
     public override void OnShow()
@@ -108,12 +108,12 @@ public class HubScreen : ScreenController
     void OnCurrencyChanged(CurrencyChangedEvent e) => RefreshCurrencies();
     void OnGameModeSelected(GameModeSelectedEvent e) => RefreshMode();
 
-    void Play()
+    /// <summary>Abre MatchSetup para elegir composicion. Siembra el modo y el rol visible (el avatar
+    /// del toggle) como valor inicial; MatchSetup permite cambiarlo y es quien carga la escena.</summary>
+    void OpenMatchSetup(MatchConfig.PlayMode mode)
     {
-        if (string.IsNullOrEmpty(gameplaySceneName)) return;
-        // Entrar desde el Meta: GameManager toma la rama "configurada" (rol AL AZAR) y lee el
-        // loadout equipado de IProfileService. El modo ya quedo fijado por GameMode (default survival).
-        MatchConfig.Configured = true;
-        SceneManager.LoadScene(gameplaySceneName);
+        MatchConfig.Mode       = mode;
+        MatchConfig.PlayerTeam = _shownRole;
+        Screens?.Show("MatchSetup");
     }
 }

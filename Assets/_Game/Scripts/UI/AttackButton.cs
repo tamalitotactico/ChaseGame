@@ -32,8 +32,15 @@ public class AttackButton : MonoBehaviour, IPointerDownHandler
 
     PlayerBrain _pb;
     Character _player;
+    CanvasGroup _cg;
 
-    void OnEnable() => EventBus.Subscribe<CharacterSpawnedEvent>(OnSpawned);
+    void OnEnable()
+    {
+        EventBus.Subscribe<CharacterSpawnedEvent>(OnSpawned);
+        // Pull: si el jugador local ya existe (spawn ocurrido antes de habilitarse), re-evaluar ya.
+        if (PlayerBrain.Local != null)
+            OnSpawned(new CharacterSpawnedEvent { Character = PlayerBrain.Local.GetComponent<Character>() });
+    }
 
     void OnDisable() => EventBus.Unsubscribe<CharacterSpawnedEvent>(OnSpawned);
 
@@ -48,14 +55,29 @@ public class AttackButton : MonoBehaviour, IPointerDownHandler
         _pb = pb;
         _player = e.Character;
 
-        // Visibilidad: solo si el player tiene basic attack (Hunter en este proyecto).
+        // Visibilidad por rol SIN desactivar el GameObject. Si hicieramos gameObject.SetActive(false)
+        // para el Prey, este componente dejaria de escuchar CharacterSpawnedEvent y NADA lo volveria a
+        // activar -> el boton de ataque quedaba muerto en todas las partidas siguientes. Con CanvasGroup
+        // el GO sigue vivo y suscrito, y se re-evalua en cada spawn (Hunter lo muestra, Prey lo oculta).
         bool hasAttack = _player.Data != null && _player.Data.hasBasicAttack;
-        gameObject.SetActive(hasAttack);
+        SetShown(hasAttack);
 
         if (cooldownFill != null)
             cooldownFill.fillAmount = 1f;
         if (cooldownOverlay != null)
             cooldownOverlay.SetActive(false);
+    }
+
+    void SetShown(bool shown)
+    {
+        if (_cg == null)
+        {
+            _cg = GetComponent<CanvasGroup>();
+            if (_cg == null) _cg = gameObject.AddComponent<CanvasGroup>();
+        }
+        _cg.alpha = shown ? 1f : 0f;
+        _cg.interactable = shown;
+        _cg.blocksRaycasts = shown;
     }
 
     void Update()

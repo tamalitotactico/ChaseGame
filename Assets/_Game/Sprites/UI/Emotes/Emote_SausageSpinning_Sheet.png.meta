@@ -1,0 +1,1283 @@
+fileFormatVersion: 2
+guid: 4d5cb530a79d7114facb67b59d90bbab
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1865861020516886121
+    second: Emote_SausageSpinning_Sheet_0
+  - first:
+      213: 3008546886463045862
+    second: Emote_SausageSpinning_Sheet_1
+  - first:
+      213: 7785510028595713793
+    second: Emote_SausageSpinning_Sheet_2
+  - first:
+      213: 4309996125605256146
+    second: Emote_SausageSpinning_Sheet_3
+  - first:
+      213: 824804212348276026
+    second: Emote_SausageSpinning_Sheet_4
+  - first:
+      213: -1028323252172747835
+    second: Emote_SausageSpinning_Sheet_5
+  - first:
+      213: 2236915858883613577
+    second: Emote_SausageSpinning_Sheet_6
+  - first:
+      213: -7216631384012003965
+    second: Emote_SausageSpinning_Sheet_7
+  - first:
+      213: -1435741170147020908
+    second: Emote_SausageSpinning_Sheet_8
+  - first:
+      213: -6978441366119111366
+    second: Emote_SausageSpinning_Sheet_9
+  - first:
+      213: -1616280137526519246
+    second: Emote_SausageSpinning_Sheet_10
+  - first:
+      213: -7353195527927239183
+    second: Emote_SausageSpinning_Sheet_11
+  - first:
+      213: 1916780479203900660
+    second: Emote_SausageSpinning_Sheet_12
+  - first:
+      213: -493940716136660626
+    second: Emote_SausageSpinning_Sheet_13
+  - first:
+      213: 7701519994108994022
+    second: Emote_SausageSpinning_Sheet_14
+  - first:
+      213: 6338946136017407106
+    second: Emote_SausageSpinning_Sheet_15
+  - first:
+      213: -1074124338053029005
+    second: Emote_SausageSpinning_Sheet_16
+  - first:
+      213: -6132235168864531990
+    second: Emote_SausageSpinning_Sheet_17
+  - first:
+      213: -896667526603738797
+    second: Emote_SausageSpinning_Sheet_18
+  - first:
+      213: -7027384511807911231
+    second: Emote_SausageSpinning_Sheet_19
+  - first:
+      213: -8085473633882126785
+    second: Emote_SausageSpinning_Sheet_20
+  - first:
+      213: -1390572676238204868
+    second: Emote_SausageSpinning_Sheet_21
+  - first:
+      213: 4118874636516218906
+    second: Emote_SausageSpinning_Sheet_22
+  - first:
+      213: -4393364033372121176
+    second: Emote_SausageSpinning_Sheet_23
+  - first:
+      213: -8652246916714588671
+    second: Emote_SausageSpinning_Sheet_24
+  - first:
+      213: 7910206266397204544
+    second: Emote_SausageSpinning_Sheet_25
+  - first:
+      213: -8514983445011126566
+    second: Emote_SausageSpinning_Sheet_26
+  - first:
+      213: -4512963434301989791
+    second: Emote_SausageSpinning_Sheet_27
+  - first:
+      213: 2586648166558242701
+    second: Emote_SausageSpinning_Sheet_28
+  - first:
+      213: 9172853621609873952
+    second: Emote_SausageSpinning_Sheet_29
+  - first:
+      213: 2205077428363783253
+    second: Emote_SausageSpinning_Sheet_30
+  - first:
+      213: 1246398965200201388
+    second: Emote_SausageSpinning_Sheet_31
+  - first:
+      213: 8938753759898018973
+    second: Emote_SausageSpinning_Sheet_32
+  - first:
+      213: 3349272335938565398
+    second: Emote_SausageSpinning_Sheet_33
+  - first:
+      213: 8241261866573260507
+    second: Emote_SausageSpinning_Sheet_34
+  - first:
+      213: -1945566997597312778
+    second: Emote_SausageSpinning_Sheet_35
+  - first:
+      213: 4633047344482874539
+    second: Emote_SausageSpinning_Sheet_36
+  - first:
+      213: -5038732728958704796
+    second: Emote_SausageSpinning_Sheet_37
+  - first:
+      213: -7144630227129233031
+    second: Emote_SausageSpinning_00
+  - first:
+      213: 8593718457772377365
+    second: Emote_SausageSpinning_01
+  - first:
+      213: -7492768784302923146
+    second: Emote_SausageSpinning_02
+  - first:
+      213: -9185432463855756614
+    second: Emote_SausageSpinning_03
+  - first:
+      213: 5231617187019729809
+    second: Emote_SausageSpinning_04
+  - first:
+      213: -4957735917789674440
+    second: Emote_SausageSpinning_05
+  - first:
+      213: 371386676779224727
+    second: Emote_SausageSpinning_06
+  - first:
+      213: -542393122675508938
+    second: Emote_SausageSpinning_07
+  - first:
+      213: -7019350125271259151
+    second: Emote_SausageSpinning_08
+  - first:
+      213: -8259810964986772583
+    second: Emote_SausageSpinning_09
+  - first:
+      213: -4582138471803390295
+    second: Emote_SausageSpinning_10
+  - first:
+      213: -8687609097287518912
+    second: Emote_SausageSpinning_11
+  - first:
+      213: 7189439553608301716
+    second: Emote_SausageSpinning_12
+  - first:
+      213: 4437517658612678475
+    second: Emote_SausageSpinning_13
+  - first:
+      213: -3931105564601505287
+    second: Emote_SausageSpinning_14
+  - first:
+      213: 8671217277137598376
+    second: Emote_SausageSpinning_15
+  - first:
+      213: 6249661914710385068
+    second: Emote_SausageSpinning_16
+  - first:
+      213: -5713392590132450714
+    second: Emote_SausageSpinning_17
+  - first:
+      213: 2775463973812148401
+    second: Emote_SausageSpinning_18
+  - first:
+      213: 7186347469077396416
+    second: Emote_SausageSpinning_19
+  - first:
+      213: 894239964224768518
+    second: Emote_SausageSpinning_20
+  - first:
+      213: -4731960646255066597
+    second: Emote_SausageSpinning_21
+  - first:
+      213: -772516885810401812
+    second: Emote_SausageSpinning_22
+  - first:
+      213: -8245337620598844918
+    second: Emote_SausageSpinning_23
+  - first:
+      213: -3580991303533021517
+    second: Emote_SausageSpinning_24
+  - first:
+      213: 3849030428395375570
+    second: Emote_SausageSpinning_25
+  - first:
+      213: 9093653972187919170
+    second: Emote_SausageSpinning_26
+  - first:
+      213: -9214435259881983482
+    second: Emote_SausageSpinning_27
+  - first:
+      213: -5049978037013146485
+    second: Emote_SausageSpinning_28
+  - first:
+      213: -3779723199760455247
+    second: Emote_SausageSpinning_29
+  - first:
+      213: 2166179295797166464
+    second: Emote_SausageSpinning_30
+  - first:
+      213: 1623968772397699124
+    second: Emote_SausageSpinning_31
+  - first:
+      213: 8622693087184884227
+    second: Emote_SausageSpinning_32
+  - first:
+      213: -2271403320849774661
+    second: Emote_SausageSpinning_33
+  - first:
+      213: 5019275025952117404
+    second: Emote_SausageSpinning_34
+  - first:
+      213: 3142311770635436771
+    second: Emote_SausageSpinning_35
+  - first:
+      213: 4422345329186928965
+    second: Emote_SausageSpinning_36
+  - first:
+      213: 3937256847342640615
+    second: Emote_SausageSpinning_37
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 971917c89ac29dc90800000000000000
+      internalID: -7144630227129233031
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_01
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5158d37e765034770800000000000000
+      internalID: 8593718457772377365
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_02
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6722d733d76540890800000000000000
+      internalID: -7492768784302923146
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_03
+      rect:
+        serializedVersion: 2
+        x: 600
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aba598337d9c68080800000000000000
+      internalID: -9185432463855756614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_04
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19ba3210d107a9840800000000000000
+      internalID: 5231617187019729809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_05
+      rect:
+        serializedVersion: 2
+        x: 1000
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 83483f13375923bb0800000000000000
+      internalID: -4957735917789674440
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_06
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79e0dbff63e672500800000000000000
+      internalID: 371386676779224727
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_07
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 764
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 639bf4224580978f0800000000000000
+      internalID: -542393122675508938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f7ec1d4042469e90800000000000000
+      internalID: -7019350125271259151
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_09
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 993461090b14f5d80800000000000000
+      internalID: -8259810964986772583
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_10
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a6f18c4659f860c0800000000000000
+      internalID: -4582138471803390295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_11
+      rect:
+        serializedVersion: 2
+        x: 600
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 045b9b01e896f6780800000000000000
+      internalID: -8687609097287518912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_12
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49c37f6ce2506c360800000000000000
+      internalID: 7189439553608301716
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_13
+      rect:
+        serializedVersion: 2
+        x: 1000
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4fb12eacca359d30800000000000000
+      internalID: 4437517658612678475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_14
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9f9ad5f1158e179c0800000000000000
+      internalID: -3931105564601505287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_15
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 573
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a73406eb2a565870800000000000000
+      internalID: 8671217277137598376
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_16
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca1a99836624bb650800000000000000
+      internalID: 6249661914710385068
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_17
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66a6ecac5b3f5b0b0800000000000000
+      internalID: -5713392590132450714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_18
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b897f577cd648620800000000000000
+      internalID: 2775463973812148401
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_19
+      rect:
+        serializedVersion: 2
+        x: 600
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0cbb2eeb2f80bb360800000000000000
+      internalID: 7186347469077396416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_20
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60a4393728af86c00800000000000000
+      internalID: 894239964224768518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_21
+      rect:
+        serializedVersion: 2
+        x: 1000
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b12c6dcfcd2b45eb0800000000000000
+      internalID: -4731960646255066597
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_22
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ceda74e3cf77745f0800000000000000
+      internalID: -772516885810401812
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_23
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 382
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a029a07ae1da29d80800000000000000
+      internalID: -8245337620598844918
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_24
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b6b621e163cd4ec0800000000000000
+      internalID: -3580991303533021517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_25
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2db0d2618c08a6530800000000000000
+      internalID: 3849030428395375570
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_26
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 243b4928b16233e70800000000000000
+      internalID: 9093653972187919170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_27
+      rect:
+        serializedVersion: 2
+        x: 600
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60276e883ffbf1080800000000000000
+      internalID: -9214435259881983482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_28
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b849e443bbfdae9b0800000000000000
+      internalID: -5049978037013146485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_29
+      rect:
+        serializedVersion: 2
+        x: 1000
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b9a9f096c9bb8bc0800000000000000
+      internalID: -3779723199760455247
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_30
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 081cbc5b790df0e10800000000000000
+      internalID: 2166179295797166464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_31
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 191
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 430971d8efe798610800000000000000
+      internalID: 1623968772397699124
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_32
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3021fd48da5f9a770800000000000000
+      internalID: 8622693087184884227
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_33
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 0
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb74b1fc6ba5a70e0800000000000000
+      internalID: -2271403320849774661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_34
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 0
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c929dd7fa0c08a540800000000000000
+      internalID: 5019275025952117404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_35
+      rect:
+        serializedVersion: 2
+        x: 600
+        y: 0
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e2014e18ebbb9b20800000000000000
+      internalID: 3142311770635436771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_36
+      rect:
+        serializedVersion: 2
+        x: 800
+        y: 0
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5497b4475a35f5d30800000000000000
+      internalID: 4422345329186928965
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Emote_SausageSpinning_37
+      rect:
+        serializedVersion: 2
+        x: 1000
+        y: 0
+        width: 200
+        height: 191
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ed155ffd32f3a630800000000000000
+      internalID: 3937256847342640615
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Emote_SausageSpinning_00: -7144630227129233031
+      Emote_SausageSpinning_01: 8593718457772377365
+      Emote_SausageSpinning_02: -7492768784302923146
+      Emote_SausageSpinning_03: -9185432463855756614
+      Emote_SausageSpinning_04: 5231617187019729809
+      Emote_SausageSpinning_05: -4957735917789674440
+      Emote_SausageSpinning_06: 371386676779224727
+      Emote_SausageSpinning_07: -542393122675508938
+      Emote_SausageSpinning_08: -7019350125271259151
+      Emote_SausageSpinning_09: -8259810964986772583
+      Emote_SausageSpinning_10: -4582138471803390295
+      Emote_SausageSpinning_11: -8687609097287518912
+      Emote_SausageSpinning_12: 7189439553608301716
+      Emote_SausageSpinning_13: 4437517658612678475
+      Emote_SausageSpinning_14: -3931105564601505287
+      Emote_SausageSpinning_15: 8671217277137598376
+      Emote_SausageSpinning_16: 6249661914710385068
+      Emote_SausageSpinning_17: -5713392590132450714
+      Emote_SausageSpinning_18: 2775463973812148401
+      Emote_SausageSpinning_19: 7186347469077396416
+      Emote_SausageSpinning_20: 894239964224768518
+      Emote_SausageSpinning_21: -4731960646255066597
+      Emote_SausageSpinning_22: -772516885810401812
+      Emote_SausageSpinning_23: -8245337620598844918
+      Emote_SausageSpinning_24: -3580991303533021517
+      Emote_SausageSpinning_25: 3849030428395375570
+      Emote_SausageSpinning_26: 9093653972187919170
+      Emote_SausageSpinning_27: -9214435259881983482
+      Emote_SausageSpinning_28: -5049978037013146485
+      Emote_SausageSpinning_29: -3779723199760455247
+      Emote_SausageSpinning_30: 2166179295797166464
+      Emote_SausageSpinning_31: 1623968772397699124
+      Emote_SausageSpinning_32: 8622693087184884227
+      Emote_SausageSpinning_33: -2271403320849774661
+      Emote_SausageSpinning_34: 5019275025952117404
+      Emote_SausageSpinning_35: 3142311770635436771
+      Emote_SausageSpinning_36: 4422345329186928965
+      Emote_SausageSpinning_37: 3937256847342640615
+      Emote_SausageSpinning_Sheet_0: -1865861020516886121
+      Emote_SausageSpinning_Sheet_1: 3008546886463045862
+      Emote_SausageSpinning_Sheet_10: -1616280137526519246
+      Emote_SausageSpinning_Sheet_11: -7353195527927239183
+      Emote_SausageSpinning_Sheet_12: 1916780479203900660
+      Emote_SausageSpinning_Sheet_13: -493940716136660626
+      Emote_SausageSpinning_Sheet_14: 7701519994108994022
+      Emote_SausageSpinning_Sheet_15: 6338946136017407106
+      Emote_SausageSpinning_Sheet_16: -1074124338053029005
+      Emote_SausageSpinning_Sheet_17: -6132235168864531990
+      Emote_SausageSpinning_Sheet_18: -896667526603738797
+      Emote_SausageSpinning_Sheet_19: -7027384511807911231
+      Emote_SausageSpinning_Sheet_2: 7785510028595713793
+      Emote_SausageSpinning_Sheet_20: -8085473633882126785
+      Emote_SausageSpinning_Sheet_21: -1390572676238204868
+      Emote_SausageSpinning_Sheet_22: 4118874636516218906
+      Emote_SausageSpinning_Sheet_23: -4393364033372121176
+      Emote_SausageSpinning_Sheet_24: -8652246916714588671
+      Emote_SausageSpinning_Sheet_25: 7910206266397204544
+      Emote_SausageSpinning_Sheet_26: -8514983445011126566
+      Emote_SausageSpinning_Sheet_27: -4512963434301989791
+      Emote_SausageSpinning_Sheet_28: 2586648166558242701
+      Emote_SausageSpinning_Sheet_29: 9172853621609873952
+      Emote_SausageSpinning_Sheet_3: 4309996125605256146
+      Emote_SausageSpinning_Sheet_30: 2205077428363783253
+      Emote_SausageSpinning_Sheet_31: 1246398965200201388
+      Emote_SausageSpinning_Sheet_32: 8938753759898018973
+      Emote_SausageSpinning_Sheet_33: 3349272335938565398
+      Emote_SausageSpinning_Sheet_34: 8241261866573260507
+      Emote_SausageSpinning_Sheet_35: -1945566997597312778
+      Emote_SausageSpinning_Sheet_36: 4633047344482874539
+      Emote_SausageSpinning_Sheet_37: -5038732728958704796
+      Emote_SausageSpinning_Sheet_4: 824804212348276026
+      Emote_SausageSpinning_Sheet_5: -1028323252172747835
+      Emote_SausageSpinning_Sheet_6: 2236915858883613577
+      Emote_SausageSpinning_Sheet_7: -7216631384012003965
+      Emote_SausageSpinning_Sheet_8: -1435741170147020908
+      Emote_SausageSpinning_Sheet_9: -6978441366119111366
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

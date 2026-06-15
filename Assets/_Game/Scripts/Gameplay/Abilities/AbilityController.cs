@@ -43,6 +43,7 @@ public class AbilityController : MonoBehaviour
 
     Character     _character;
     Ability[]     _runtime;
+    int[]         _hitCharge;        // golpes basicos acumulados por slot (solo slots con usesHitCharge)
     Aimer         _activeAimer;
     int           _activeSlot   = -1;
     bool          _wasCasting;       // edge detection para OnCastingStarted/Stopped
@@ -62,14 +63,43 @@ public class AbilityController : MonoBehaviour
         _character = GetComponent<Character>();
     }
 
+    void OnEnable()  => EventBus.Subscribe<BasicAttackLandedEvent>(OnBasicAttackLanded);
+    void OnDisable() => EventBus.Unsubscribe<BasicAttackLandedEvent>(OnBasicAttackLanded);
+
     /// <summary>Llamado por Character.Initialize() tras leer CharacterData.</summary>
     public void Bind(AbilityData[] datas)
     {
-        if (datas == null) { _runtime = Array.Empty<Ability>(); return; }
+        if (datas == null) { _runtime = Array.Empty<Ability>(); _hitCharge = Array.Empty<int>(); return; }
 
-        _runtime = new Ability[datas.Length];
+        _runtime   = new Ability[datas.Length];
+        _hitCharge = new int[datas.Length];
         for (int i = 0; i < datas.Length; i++)
             _runtime[i] = datas[i] != null ? datas[i].CreateRuntime() : null;
+    }
+
+    /// <summary>Recorta una fraccion [0..1] del cooldown restante de TODAS las habilidades.
+    /// Lo usa Booster Pills del Medic (recorte instantaneo al aliado).</summary>
+    public void ReduceAllCooldowns(float fraction)
+    {
+        if (_runtime == null) return;
+        for (int i = 0; i < _runtime.Length; i++)
+            _runtime[i]?.ReduceCooldown(fraction);
+    }
+
+    /// <summary>Carga de hits acumulada del slot (para HUD). 0 si el slot no usa carga.</summary>
+    public int GetHitCharge(int slot) =>
+        (_hitCharge != null && slot >= 0 && slot < _hitCharge.Length) ? _hitCharge[slot] : 0;
+
+    /// <summary>Suma un golpe basico a los slots con usesHitCharge cuando el atacante es este personaje.</summary>
+    void OnBasicAttackLanded(BasicAttackLandedEvent e)
+    {
+        if (_runtime == null || e.Attacker != _character) return;
+        for (int i = 0; i < _runtime.Length; i++)
+        {
+            var d = _runtime[i]?.Data;
+            if (d == null || !d.usesHitCharge) continue;
+            _hitCharge[i] = Mathf.Min(Mathf.Max(1, d.hitsRequired), _hitCharge[i] + 1);
+        }
     }
 
     /// <summary>Drive principal. Llamar desde Character cada frame.</summary>
@@ -82,9 +112,22 @@ public class AbilityController : MonoBehaviour
             {
                 if (_runtime[i] == null) continue;
                 _runtime[i].Tick(dt);
-                float cd        = _runtime[i].Data.cooldown;
-                float remaining = Mathf.Max(0f, _runtime[i].CooldownRemaining);
-                float norm      = cd > 0 ? 1f - (remaining / cd) : 1f;
+
+                var data = _runtime[i].Data;
+                float norm, remaining;
+                if (data != null && data.usesHitCharge)
+                {
+                    // Carga por hits: el fill 0..1 es el progreso del contador; "remaining" = hits que faltan.
+                    int req = Mathf.Max(1, data.hitsRequired);
+                    norm      = Mathf.Clamp01((float)_hitCharge[i] / req);
+                    remaining = Mathf.Max(0, req - _hitCharge[i]);
+                }
+                else
+                {
+                    float cd  = data != null ? data.cooldown : 0f;
+                    remaining = Mathf.Max(0f, _runtime[i].CooldownRemaining);
+                    norm      = cd > 0 ? 1f - (remaining / cd) : 1f;
+                }
                 OnCooldownChanged?.Invoke(i, Mathf.Clamp01(norm), remaining);
             }
         }
@@ -195,6 +238,15 @@ public class AbilityController : MonoBehaviour
         int slot = _activeSlot;
         var ctx  = BuildContext(in intent);
         var aim  = _activeAimer.GetResult();
+
+        // Refund: si la ability no puede ejecutarse (ej. ult sin target en vision), se cancela
+        // sin SFX, sin cooldown y SIN consumir la carga de hits.
+        if (!_runtime[slot].CanExecute(in ctx, in aim))
+        {
+            CleanupAimer(cancelled: true);
+            return;
+        }
+
         _activeAimer.End();
 
         bool wasCasting = _wasCasting;
@@ -205,12 +257,32 @@ public class AbilityController : MonoBehaviour
         if (wasCasting) OnCastingStopped?.Invoke();
         OnAimingStopped?.Invoke();
 
-        var castCue = _runtime[slot].Data.sfxOnCast;
+        var data = _runtime[slot].Data;
+        var castCue = data != null ? data.sfxOnCast : null;
         if (castCue != null)
             ServiceLocator.Resolve<IAudioService>()?.PlayAttached(castCue, _character.transform);
 
-        _runtime[slot].Execute(in ctx, in aim);
-        _runtime[slot].StartCooldown();
+        // Usar una habilidad rompe camuflaje/invisibilidad PREVIO. Se llama antes de Execute para
+        // que la propia habilidad que aplica camuflaje (Nadar) deje uno nuevo en pie.
+        if (_character != null && _character.StatusEffects != null)
+            _character.StatusEffects.BreakActionSensitiveEffects();
+
+        // Si Execute lanza, NO debe saltarse el cooldown/consumo (eso permitia spamear la
+        // habilidad). Se loguea y se sigue: la habilidad "se uso" igual.
+        try
+        {
+            _runtime[slot].Execute(in ctx, in aim);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+
+        if (data != null && data.usesHitCharge)
+            _hitCharge[slot] = 0;            // consumir la carga (reset)
+        else
+            _runtime[slot].StartCooldown();  // cooldown normal
+
         OnAbilityExecuted?.Invoke(slot);
     }
 
@@ -228,7 +300,11 @@ public class AbilityController : MonoBehaviour
 
     bool SlotReady(int slot)
     {
-        return slot < _runtime.Length && _runtime[slot] != null && _runtime[slot].IsReady;
+        if (slot >= _runtime.Length || _runtime[slot] == null) return false;
+        var data = _runtime[slot].Data;
+        if (data != null && data.usesHitCharge)
+            return _hitCharge[slot] >= Mathf.Max(1, data.hitsRequired);
+        return _runtime[slot].IsReady;
     }
 
     AbilityContext BuildContext(in BrainIntent intent)

@@ -28,10 +28,22 @@ public class PlayerBrain : MonoBehaviour, IBrain
     bool _attackQueued; // true si UI o teclado lo activo este frame
     Vector2 _uiAim;     // drag-aim del boton tactil; cero = sin drag activo
 
+    /// <summary>
+    /// Referencia retenida al PlayerBrain local activo. La UI (botones de habilidad/ataque) la usa
+    /// para BINDEARSE al re-activarse aunque haya perdido el CharacterSpawnedEvent (ej. un slot que
+    /// AbilityHUD prende/apaga por rol, o el boton de ataque). Sin esto, un binder que estaba inactivo
+    /// cuando se publico el spawn nunca se enteraba del jugador -> habilidad/boton muertos desde la 2da
+    /// partida. Es null entre partidas (el cuerpo se destruye y limpia la ref).
+    /// </summary>
+    public static PlayerBrain Local { get; private set; }
+
     void Awake()
     {
         if (inputManager == null) inputManager = FindAnyObjectByType<HybridInputManager>();
     }
+
+    void OnEnable()  => Local = this;
+    void OnDisable() { if (Local == this) Local = null; }
 
     public BrainIntent CaptureIntent()
     {

@@ -10,5 +10,7 @@ public class DashAbilityData : AbilityData
     [Tooltip("Duracion del impulso en segundos.")]
     public float dashDuration = 0.15f;
 
+    public override AimStyle Aim => AimStyle.None;
+
     public override Ability CreateRuntime() => new DashAbility(this);
 }

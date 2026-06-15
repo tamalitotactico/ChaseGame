@@ -1,3 +1,5 @@
+using UnityEngine;
+
 /// <summary>
 /// Catalogo de eventos publicados via EventBus. Cada uno es struct para evitar GC.
 /// Phase 3: estos seran serializables como NetworkInput / NetworkBehaviour ticks.
@@ -45,6 +47,15 @@ public struct AbilityActivatedEvent
     public string AbilityId;
 }
 
+/// <summary>Un ataque BASICO conecto y aplico dano a un objetivo. Lo usa el contador de carga
+/// de las ultimates de hunter ("Golpea 2 veces a preys"): solo cuentan ataques basicos, no
+/// habilidades. En red sera derivado del hit validado por la autoridad.</summary>
+public struct BasicAttackLandedEvent
+{
+    public Character Attacker;
+    public Character Victim;
+}
+
 /// <summary>Un StatusEffect se aplico a un Character. Generico (cualquier efecto): consumidores
 /// filtran por tipo (e.Effect is FearedEffect) y/o por personaje (jugador local). Lo usa
 /// CameraEffectsRig para sacudir la camara SOLO cuando el prey controlado por el jugador recibe
@@ -61,6 +72,20 @@ public struct StatusEffectRemovedEvent
 {
     public Character    Character;
     public StatusEffect Effect;
+}
+
+/// <summary>El jugador local solto un emote in-game. Local por ahora; en red sera un RPC.
+/// Lleva AMBAS posiciones porque la posicion de render depende de QUIEN mira (matriz de
+/// visibilidad): emote de un VIVO -> sobre el jugador (todos). Emote de un FANTASMA -> los
+/// fantasmas lo ven en GhostPos, los vivos en BodyPos (al fantasma no lo ven). El
+/// EmoteBubblePresenter resuelve el target segun el estado del viewer local.</summary>
+public struct EmoteUsedEvent
+{
+    public Character Source;    // el jugador que emoteo (su Character/cuerpo)
+    public string    EmoteId;
+    public bool      FromGhost; // lo solto controlando el fantasma
+    public Vector3   GhostPos;  // posicion del fantasma (si FromGhost)
+    public Vector3   BodyPos;   // posicion del cuerpo
 }
 
 public struct InteractionStartedEvent

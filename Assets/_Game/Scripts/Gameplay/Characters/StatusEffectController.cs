@@ -48,6 +48,28 @@ public class StatusEffectController : MonoBehaviour
         }
     }
 
+    /// <summary>True si algun efecto activo otorga inmunidad a control (rechaza nuevos CC).</summary>
+    public bool HasCCImmunity
+    {
+        get
+        {
+            for (int i = 0; i < _active.Count; i++)
+                if (_active[i].GrantsCCImmunity) return true;
+            return false;
+        }
+    }
+
+    /// <summary>True si algun efecto activo vuelve LETAL el ataque basico del owner (True Form).</summary>
+    public bool HasLethalAttack
+    {
+        get
+        {
+            for (int i = 0; i < _active.Count; i++)
+                if (_active[i].GrantsLethalAttack) return true;
+            return false;
+        }
+    }
+
     /// <summary>Producto de todos los SpeedModifier activos. Resultado >= 0.</summary>
     public float AggregatedSpeedModifier
     {
@@ -95,9 +117,14 @@ public class StatusEffectController : MonoBehaviour
 
     /// <summary>
     /// Aplica un efecto. Si ya existe uno del mismo tipo, lo refresca (no apila).
+    /// Si el owner tiene inmunidad a control y el efecto es de control, se rechaza
+    /// (devuelve false sin aplicarlo). Devuelve true si quedo aplicado.
     /// </summary>
-    public void Apply(StatusEffect effect)
+    public bool Apply(StatusEffect effect)
     {
+        if (effect == null) return false;
+        if (effect.IsControlEffect && HasCCImmunity) return false;
+
         for (int i = _active.Count - 1; i >= 0; i--)
         {
             if (_active[i].GetType() == effect.GetType())
@@ -116,6 +143,54 @@ public class StatusEffectController : MonoBehaviour
         OnEffectApplied?.Invoke(effect);
         EventBus.Publish(new StatusEffectAppliedEvent { Character = _char, Effect = effect });
         RefreshMotor();
+        return true;
+    }
+
+    /// <summary>Efecto activo que oculta al owner de enemigos (camuflaje/invisible), o null. Lo consulta
+    /// StateVisibility para el alpha del sprite. Si hay varios, devuelve el primero.</summary>
+    public StatusEffect GetHidingEffect()
+    {
+        for (int i = 0; i < _active.Count; i++)
+            if (_active[i].HidesFromEnemies) return _active[i];
+        return null;
+    }
+
+    /// <summary>Remueve los efectos marcados BreaksOnOwnerAction (camuflaje/invisible). Lo llaman
+    /// CombatController (al atacar) y AbilityController (al ejecutar una habilidad). Devuelve cuantos removio.</summary>
+    public int BreakActionSensitiveEffects()
+    {
+        int removed = 0;
+        for (int i = _active.Count - 1; i >= 0; i--)
+        {
+            if (!_active[i].BreaksOnOwnerAction) continue;
+            var e = _active[i];
+            e.OnRemove(_char);
+            _active.RemoveAt(i);
+            OnEffectRemoved?.Invoke(e);
+            EventBus.Publish(new StatusEffectRemovedEvent { Character = _char, Effect = e });
+            removed++;
+        }
+        if (removed > 0) RefreshMotor();
+        return removed;
+    }
+
+    /// <summary>Remueve TODOS los efectos de control activos (fear/slow/stun/charm); deja los buffs.
+    /// Devuelve cuantos removio. Lo usa Repel del Charmer (dispel fuerte).</summary>
+    public int DispelControlEffects()
+    {
+        int removed = 0;
+        for (int i = _active.Count - 1; i >= 0; i--)
+        {
+            if (!_active[i].IsControlEffect) continue;
+            var e = _active[i];
+            e.OnRemove(_char);
+            _active.RemoveAt(i);
+            OnEffectRemoved?.Invoke(e);
+            EventBus.Publish(new StatusEffectRemovedEvent { Character = _char, Effect = e });
+            removed++;
+        }
+        if (removed > 0) RefreshMotor();
+        return removed;
     }
 
     /// <summary>Remueve el primer efecto del tipo T que este activo.</summary>
