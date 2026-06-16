@@ -27,6 +27,7 @@ public class CharmProjectile : MonoBehaviour, IWallDestructible
     Rigidbody2D _rb;
 
     readonly HashSet<Character> _hit = new();
+    bool _initialized;
 
     void Awake()
     {
@@ -46,21 +47,23 @@ public class CharmProjectile : MonoBehaviour, IWallDestructible
         _slowMultiplier = slowMultiplier;
         _owner          = owner;
         _sfxOnHit       = sfxOnHit;
+        _initialized    = true;
     }
 
     void FixedUpdate()
     {
+        if (!_initialized) return;
         Vector2 delta = _direction * (_speed * Time.fixedDeltaTime);
         _rb.MovePosition(_rb.position + delta);
         _traveled += delta.magnitude;
         if (_traveled >= _maxRange)
-            Destroy(gameObject);
+            NetDespawn.Despawn(gameObject);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (!_initialized) return;
         if (_owner != null && other.gameObject == _owner.gameObject) return;
-        // Los muros los maneja ProjectileWallSensor (collider de muro mas chico que el de impacto).
 
         var c = other.GetComponentInParent<Character>();
         if (c == null || c == _owner) return;
@@ -79,10 +82,9 @@ public class CharmProjectile : MonoBehaviour, IWallDestructible
         _hit.Add(c);
         ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_sfxOnHit, transform.position);
 
-        // Perfora: solo se destruye al alcanzar el cupo (si lo hay).
         if (_maxTargets > 0 && _hit.Count >= _maxTargets)
-            Destroy(gameObject);
+            NetDespawn.Despawn(gameObject);
     }
 
-    public void OnWallHit(Vector2 point) => Destroy(gameObject);
+    public void OnWallHit(Vector2 point) => NetDespawn.Despawn(gameObject);
 }

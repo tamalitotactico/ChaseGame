@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+#if FUSION2
+using Fusion;
+#endif
 
 /// <summary>
 /// Glue de la escena de partida. Posee:
@@ -52,6 +55,10 @@ public class GameManager : MonoBehaviour
     public List<Character> Preys   { get; } = new();
     public float TimeRemaining { get; set; }
     public CharacterTeam PlayerTeam => playerTeam;
+
+    /// <summary>Registry de indicadores de aim, para que el setup local (incl. el path de red en
+    /// Character.Spawned) configure el AbilityIndicatorView del jugador local.</summary>
+    public IndicatorRegistry IndicatorRegistry => indicatorRegistry;
 
     public int AliveHuntersCount
     {
@@ -123,6 +130,12 @@ public class GameManager : MonoBehaviour
             playerTeam   = MatchConfig.PlayerTeam;
             huntersTotal = MatchConfig.HuntersTotal;
             preysTotal   = MatchConfig.PreysTotal;
+#if FUSION2
+            // Multijugador: arrancar el runner de Fusion. El spawn es host-only y event-driven
+            // (OnNetworkPlayerJoined), por eso SpawnMatchEntities queda no-op en red (ver abajo).
+            if (MatchConfig.Mode == MatchConfig.PlayMode.Multiplayer)
+                StartNetworkedMatch();
+#endif
             States.ChangeState(new StartingState());
         }
         else if (autoStart)
@@ -184,14 +197,14 @@ public class GameManager : MonoBehaviour
     static void DespawnList(List<Character> list)
     {
         for (int i = 0; i < list.Count; i++)
-            if (list[i] != null) Destroy(list[i].gameObject);
+            if (list[i] != null) NetDespawn.Despawn(list[i].gameObject);
     }
 
     static void DespawnAllOfType<T>() where T : Component
     {
         var arr = FindObjectsByType<T>(FindObjectsInactive.Exclude);
         for (int i = 0; i < arr.Length; i++)
-            if (arr[i] != null) Destroy(arr[i].gameObject);
+            if (arr[i] != null) NetDespawn.Despawn(arr[i].gameObject);
     }
 
     void Update()
@@ -203,6 +216,10 @@ public class GameManager : MonoBehaviour
     /// de la IMatchSession. La sesion decide que es cada slot; este metodo no sabe de red.</summary>
     public void SpawnMatchEntities()
     {
+#if FUSION2
+        // En red el spawn es host-only y event-driven (OnNetworkPlayerJoined + FillBots), no aqui.
+        if (MatchConfig.Mode == MatchConfig.PlayMode.Multiplayer) return;
+#endif
         Hunters.Clear();
         Preys.Clear();
 
@@ -324,6 +341,85 @@ public class GameManager : MonoBehaviour
         var charAnim = go.GetComponent<CharacterAnimator>();
         if (charAnim != null) charAnim.RebuildStateTable();
     }
+
+#if FUSION2
+    // ===== Multijugador (Fusion, Host Mode). Spawn host-only, event-driven por OnPlayerJoined. =====
+
+    NetworkBootstrap _bootstrap;
+    bool _netBotsFilled;
+
+    void StartNetworkedMatch()
+    {
+        _bootstrap = gameObject.GetComponent<NetworkBootstrap>() ?? gameObject.AddComponent<NetworkBootstrap>();
+        // Slice: AutoHostOrClient sobre una sala fija; el primero es host y llena con bots.
+        _ = _bootstrap.StartNetwork(GameMode.AutoHostOrClient);
+    }
+
+    /// <summary>Lo llama FusionInputCollector.OnPlayerJoined. Solo el host (StateAuthority) spawnea.</summary>
+    public void OnNetworkPlayerJoined(NetworkRunner runner, PlayerRef player)
+    {
+        if (runner == null || !runner.IsServer) return;
+
+        // Registrar el spawn service de red ahora que hay runner (idempotente).
+        if (!(ServiceLocator.Resolve<ISpawnService>() is FusionSpawnService))
+            ServiceLocator.Register<ISpawnService>(new FusionSpawnService(runner));
+
+        // El host (jugador local) usa su rol elegido; los clientes, el bando opuesto (slice).
+        bool isLocal = player == runner.LocalPlayer;
+        CharacterTeam team = isLocal ? playerTeam : Opposite(playerTeam);
+        SpawnNetworkedCharacter(runner, team, player, isBot: false);
+
+        // Llenar con bots una sola vez, tras el primer join (el host).
+        if (!_netBotsFilled)
+        {
+            _netBotsFilled = true;
+            FillBots(runner);
+        }
+    }
+
+    void FillBots(NetworkRunner runner)
+    {
+        int hunterBots = Mathf.Max(0, huntersTotal - (playerTeam == CharacterTeam.Hunter ? 1 : 0));
+        int preyBots   = Mathf.Max(0, preysTotal   - (playerTeam == CharacterTeam.Prey   ? 1 : 0));
+        for (int i = 0; i < hunterBots; i++) SpawnNetworkedCharacter(runner, CharacterTeam.Hunter, PlayerRef.None, isBot: true);
+        for (int i = 0; i < preyBots;   i++) SpawnNetworkedCharacter(runner, CharacterTeam.Prey,   PlayerRef.None, isBot: true);
+    }
+
+    void SpawnNetworkedCharacter(NetworkRunner runner, CharacterTeam team, PlayerRef inputAuthority, bool isBot)
+    {
+        GameObject prefab = team == CharacterTeam.Hunter ? hunterPrefab : preyPrefab;
+        if (prefab == null) { Debug.LogError($"[GameManager] Falta prefab de {team}"); return; }
+
+        var spawns = team == CharacterTeam.Hunter ? hunterSpawns : preySpawns;
+        int idx = team == CharacterTeam.Hunter ? Hunters.Count : Preys.Count;
+        Vector3 pos = (spawns != null && spawns.Length > 0) ? spawns[idx % spawns.Length].position : Vector3.zero;
+
+        ResolveLoadout(team, !isBot, out var data, out var skin);
+
+        // onBeforeSpawned: inyecta data/skin/flag bot ANTES de Character.Spawned (que lee NetworkIsBot).
+        runner.Spawn(prefab, pos, Quaternion.identity, inputAuthority, (r, obj) =>
+        {
+            var c = obj.GetComponent<Character>();
+            if (c == null) return;
+            if (data != null) c.SetData(data);
+            ApplySkin(obj.gameObject, skin);
+            c.NetworkIsBot = isBot;
+        });
+    }
+
+    /// <summary>Configura un bot networkeado. Lo llama Character.Spawned cuando NetworkIsBot &&
+    /// HasStateAuthority (el BotBrain solo corre en el host). La authority ya la fijo Spawned.</summary>
+    public void ConfigureBot(GameObject go)
+    {
+        EnsureAIComponents(go);
+        var bb = go.GetComponent<BotBrain>() ?? go.AddComponent<BotBrain>();
+        var c = go.GetComponent<Character>();
+        if (c != null) c.SetBrain(bb);
+    }
+
+    static CharacterTeam Opposite(CharacterTeam t) =>
+        t == CharacterTeam.Hunter ? CharacterTeam.Prey : CharacterTeam.Hunter;
+#endif
 
     /// <summary>
     /// Asegura que el GO bot tenga los componentes minimos para AI (Seeker, AIPath,

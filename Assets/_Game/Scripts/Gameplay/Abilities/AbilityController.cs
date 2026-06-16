@@ -47,6 +47,7 @@ public class AbilityController : MonoBehaviour
     Aimer         _activeAimer;
     int           _activeSlot   = -1;
     bool          _wasCasting;       // edge detection para OnCastingStarted/Stopped
+    bool          _previewOnly;      // cliente de red: corre la fase de aim para el indicador pero NO ejecuta
 
     public Ability[] Abilities => _runtime;
     public bool      IsAiming   => _activeAimer != null;
@@ -100,6 +101,38 @@ public class AbilityController : MonoBehaviour
             if (d == null || !d.usesHitCharge) continue;
             _hitCharge[i] = Mathf.Min(Mathf.Max(1, d.hitsRequired), _hitCharge[i] + 1);
         }
+    }
+
+    /// <summary>
+    /// Cliente de red: marca este controller como "solo preview". La fase de aim corre localmente para
+    /// dibujar el indicador, pero FinishAndExecute NO ejecuta la habilidad ni pone cooldown (eso lo hace
+    /// el host de forma autoritativa con el input replicado). Lo setea Character.Spawned en el cliente.
+    /// </summary>
+    public void SetPreviewOnly(bool value) => _previewOnly = value;
+
+    /// <summary>
+    /// Drive de SOLO la fase de aim (sin tickear cooldowns: esos llegan replicados via
+    /// PushCooldownForDisplay). Llamado cada frame en el cliente local con el ultimo intent cacheado
+    /// del PlayerBrain. Requiere _previewOnly (no ejecuta nada).
+    /// </summary>
+    public void DriveAimPreview(in BrainIntent intent)
+    {
+        if (!_previewOnly || _runtime == null) return;
+        if (_activeAimer == null) TryStartActivation(in intent);
+        else                      DriveAim(in intent);
+    }
+
+    /// <summary>
+    /// Emite OnCooldownChanged con los valores dados sin tickear la simulacion. Llamado en clientes
+    /// de red: el host replica los cooldowns via [Networked] y el cliente los empuja al HUD aqui.
+    /// </summary>
+    public void PushCooldownForDisplay(int slot, float remaining)
+    {
+        if (_runtime == null || slot < 0 || slot >= _runtime.Length || _runtime[slot] == null) return;
+        var data = _runtime[slot].Data;
+        float cd   = data != null ? data.cooldown : 0f;
+        float norm = cd > 0f ? 1f - Mathf.Clamp01(remaining / cd) : 1f;
+        OnCooldownChanged?.Invoke(slot, Mathf.Clamp01(norm), Mathf.Max(0f, remaining));
     }
 
     /// <summary>Drive principal. Llamar desde Character cada frame.</summary>
@@ -236,6 +269,21 @@ public class AbilityController : MonoBehaviour
     void FinishAndExecute(in BrainIntent intent)
     {
         int slot = _activeSlot;
+
+        // Cliente de red (preview): cerrar la fase de aim visual sin ejecutar, sin SFX, sin cooldown.
+        // El host ejecuta de verdad con el input replicado. Asi el indicador desaparece al soltar.
+        if (_previewOnly)
+        {
+            _activeAimer?.End();
+            bool wc = _wasCasting;
+            _activeAimer = null;
+            _activeSlot  = -1;
+            _wasCasting  = false;
+            if (wc) OnCastingStopped?.Invoke();
+            OnAimingStopped?.Invoke();
+            return;
+        }
+
         var ctx  = BuildContext(in intent);
         var aim  = _activeAimer.GetResult();
 

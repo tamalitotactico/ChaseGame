@@ -24,6 +24,7 @@ public class FearProjectile : MonoBehaviour, IWallDestructible
     Character _owner;
     AudioCue  _sfxOnHit;
     Rigidbody2D _rb;
+    bool      _initialized;
 
     void Awake()
     {
@@ -47,11 +48,12 @@ public class FearProjectile : MonoBehaviour, IWallDestructible
         _slowMultiplier = slowMultiplier;
         _owner          = owner;
         _sfxOnHit       = sfxOnHit;
+        _initialized    = true;
     }
 
-    // Movimiento + homing en FixedUpdate via MovePosition (consistencia con fisica 2D).
     void FixedUpdate()
     {
+        if (!_initialized) return;
         float dt = Time.fixedDeltaTime;
 
         // Homing: curvar hacia target si esta vivo y existe
@@ -73,13 +75,13 @@ public class FearProjectile : MonoBehaviour, IWallDestructible
         _rb.MovePosition(_rb.position + delta);
         _traveled += delta.magnitude;
         if (_traveled >= _maxRange)
-            Destroy(gameObject);
+            NetDespawn.Despawn(gameObject);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (!_initialized) return;
         if (_owner != null && other.gameObject == _owner.gameObject) return;
-        // Los muros los maneja ProjectileWallSensor (collider de muro mas chico que el de impacto).
 
         var c = other.GetComponentInParent<Character>();
         if (c == null || c == _owner) return;
@@ -94,10 +96,10 @@ public class FearProjectile : MonoBehaviour, IWallDestructible
         }
 
         ServiceLocator.Resolve<IAudioService>()?.PlayAtPoint(_sfxOnHit, transform.position);
-        Destroy(gameObject);
+        NetDespawn.Despawn(gameObject);
     }
 
-    public void OnWallHit(Vector2 point) => Destroy(gameObject);
+    public void OnWallHit(Vector2 point) => NetDespawn.Despawn(gameObject);
 
     static Vector2 Rotate(Vector2 v, float rad)
     {

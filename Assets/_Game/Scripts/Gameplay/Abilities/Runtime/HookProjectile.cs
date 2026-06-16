@@ -21,6 +21,7 @@ public class HookProjectile : MonoBehaviour, IWallDestructible
     Character _owner;
     AudioCue  _sfxOnHit;
     Rigidbody2D _rb;
+    bool      _initialized;
 
     void Awake() => _rb = GetComponent<Rigidbody2D>();
 
@@ -36,20 +37,22 @@ public class HookProjectile : MonoBehaviour, IWallDestructible
         _slowMultiplier = slowMultiplier;
         _owner          = owner;
         _sfxOnHit       = sfxOnHit;
+        _initialized    = true;
     }
 
     void FixedUpdate()
     {
+        if (!_initialized) return;
         Vector2 delta = _direction * (_speed * Time.fixedDeltaTime);
         _rb.MovePosition(_rb.position + delta);
         _traveled += delta.magnitude;
-        if (_traveled >= _maxRange) Destroy(gameObject);
+        if (_traveled >= _maxRange) NetDespawn.Despawn(gameObject);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (!_initialized) return;
         if (_owner != null && other.gameObject == _owner.gameObject) return;
-        // Los muros los maneja ProjectileWallSensor (collider de muro mas chico que el de impacto).
 
         var c = other.GetComponentInParent<Character>();
         if (c == null || c == _owner) return;
@@ -57,10 +60,10 @@ public class HookProjectile : MonoBehaviour, IWallDestructible
         if (!c.IsAlive) return;
 
         ApplyHit(c);
-        Destroy(gameObject);
+        NetDespawn.Despawn(gameObject);
     }
 
-    public void OnWallHit(Vector2 point) => Destroy(gameObject);
+    public void OnWallHit(Vector2 point) => NetDespawn.Despawn(gameObject);
 
     /// <summary>Aplica el efecto del gancho a un prey: lo atrae al punto medio (solo el prey) + slow.
     /// Publico para poder testearlo sin depender de un step de fisica.</summary>

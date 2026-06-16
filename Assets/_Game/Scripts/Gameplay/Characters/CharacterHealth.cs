@@ -68,6 +68,30 @@ public class CharacterHealth : MonoBehaviour
         _invulnTimer = 0f;
     }
 
+    /// <summary>
+    /// Empuja el valor de salud desde la red (cliente). Actualiza _current y dispara los eventos
+    /// correspondientes (OnDamaged/OnDied/OnHealed) para que la UI y los sistemas locales reaccionen.
+    /// El host nunca llama esto — el tiene su propio estado autoritativo.
+    /// </summary>
+    public void NetworkSync(int newHealth)
+    {
+        newHealth = Mathf.Clamp(newHealth, 0, maxHealth);
+        if (newHealth == _current) return;
+
+        int prev = _current;
+        _current = newHealth;
+
+        if (_current < prev)
+        {
+            OnDamaged?.Invoke(_current, maxHealth);
+            if (_current == 0) OnDied?.Invoke();
+        }
+        else
+        {
+            OnHealed?.Invoke(_current, maxHealth);
+        }
+    }
+
     void Update()
     {
         if (_invulnTimer > 0f) _invulnTimer -= Time.deltaTime;

@@ -33,6 +33,6 @@ public class Placeable : MonoBehaviour
     {
         if (!_hasTimer) return;
         _timer -= Time.deltaTime;
-        if (_timer <= 0f) Destroy(gameObject);
+        if (_timer <= 0f) NetDespawn.Despawn(gameObject);
     }
 }

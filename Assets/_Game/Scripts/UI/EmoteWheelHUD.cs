@@ -112,14 +112,9 @@ public class EmoteWheelHUD : MonoBehaviour,
             ? _ghostCtrl.GhostTransform.position
             : source.transform.position;
 
-        EventBus.Publish(new EmoteUsedEvent
-        {
-            Source    = source,
-            EmoteId   = id,
-            FromGhost = fromGhost,
-            GhostPos  = ghostPos,
-            BodyPos   = source.transform.position
-        });
+        // TriggerEmoteForNetwork: en Solo publica EventBus localmente; en MP envia el RPC a todos
+        // los clientes (incluyendo este) para que cada uno publique su EventBus.
+        source.TriggerEmoteForNetwork(id, fromGhost, ghostPos);
 
         _nextAllowed = Time.time + cooldownSeconds;
         return true;

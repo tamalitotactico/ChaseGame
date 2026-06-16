@@ -37,6 +37,10 @@ public class PlayerBrain : MonoBehaviour, IBrain
     /// </summary>
     public static PlayerBrain Local { get; private set; }
 
+    /// <summary>Ultimo intent capturado por CaptureIntent. Lo usa el cliente de red para alimentar
+    /// el PREVIEW LOCAL de aim (indicador) sin volver a llamar CaptureIntent (que consume edges).</summary>
+    public BrainIntent LastIntent { get; private set; }
+
     void Awake()
     {
         if (inputManager == null) inputManager = FindAnyObjectByType<HybridInputManager>();
@@ -90,6 +94,7 @@ public class PlayerBrain : MonoBehaviour, IBrain
         bool anyHeld = _uiHeld[0] || _uiHeld[1] || _uiHeld[2];
         if (!anyHeld) _uiAim = Vector2.zero;
 
+        LastIntent = intent;
         return intent;
     }
 

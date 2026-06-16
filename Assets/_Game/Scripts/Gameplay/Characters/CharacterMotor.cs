@@ -21,6 +21,12 @@ public class CharacterMotor : MonoBehaviour
     Vector2 _impulseVel;
     float _impulseRemaining;
 
+    // En partidas de red, el Character drivea el movimiento desde FixedUpdateNetwork (tick de Fusion,
+    // con la fisica simulada por RunnerSimulatePhysics2D). Cuando esto es true, el FixedUpdate de Unity
+    // NO integra (evita doble aplicacion de velocidad). En Solo/preview queda false (comportamiento actual).
+    bool _networkedDriven;
+    public void SetNetworkedDriven(bool value) => _networkedDriven = value;
+
     public float SpeedMultiplier
     {
         get => _speedMultiplier;
@@ -68,10 +74,20 @@ public class CharacterMotor : MonoBehaviour
 
     void FixedUpdate()
     {
+        // En red el Character llama NetworkTick desde FixedUpdateNetwork; no integrar aqui.
+        if (_networkedDriven) return;
+        Integrate(Time.fixedDeltaTime);
+    }
+
+    /// <summary>Integracion del movimiento desde el tick de Fusion (red). dt = Runner.DeltaTime.</summary>
+    public void NetworkTick(float dt) => Integrate(dt);
+
+    void Integrate(float dt)
+    {
         if (_impulseRemaining > 0f)
         {
             _rb.linearVelocity = _impulseVel;
-            _impulseRemaining -= Time.fixedDeltaTime;
+            _impulseRemaining -= dt;
             if (_impulseRemaining <= 0f)
                 _rb.linearVelocity = Vector2.zero;
         }

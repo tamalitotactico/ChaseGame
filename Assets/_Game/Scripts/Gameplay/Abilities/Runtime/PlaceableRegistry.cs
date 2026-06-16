@@ -26,7 +26,7 @@ public static class PlaceableRegistry
         {
             var oldest = list[0];
             list.RemoveAt(0);
-            if (oldest != null) Object.Destroy(oldest);
+            if (oldest != null) NetDespawn.Despawn(oldest);
         }
     }
 
