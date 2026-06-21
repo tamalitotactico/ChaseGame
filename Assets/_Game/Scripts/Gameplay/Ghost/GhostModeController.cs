@@ -108,12 +108,13 @@ public class GhostModeController : MonoBehaviour
         float speed = baseSpeed * Mathf.Max(0.1f, ghostSpeedBonus);
 
         Vector3 pos = body.transform.position;
+        // El fantasma es una herramienta de vista LOCAL del jugador downed (no lo ven los demas en
+        // este hito). Se instancia SIEMPRE local: NO via ISpawnService, porque en el host esa ruta es
+        // FusionSpawnService -> Runner.Spawn, que falla con un prefab sin NetworkObject (PlayerGhost no
+        // lo tiene). "Ghost-ve-ghost" en red sera un hito posterior (ghost = NetworkObject + filtro).
         if (ghostPrefab != null)
         {
-            var spawn = ServiceLocator.Resolve<ISpawnService>();
-            _ghost = spawn != null
-                ? spawn.Spawn(ghostPrefab, pos, Quaternion.identity)
-                : Instantiate(ghostPrefab, pos, Quaternion.identity);
+            _ghost = Instantiate(ghostPrefab, pos, Quaternion.identity);
             _ghost.transform.position = pos;
         }
         else
@@ -155,8 +156,7 @@ public class GhostModeController : MonoBehaviour
         if (_bodyCharacter != null && _camera != null) _camera.SetTarget(_bodyCharacter.transform);
         if (_ghost != null)
         {
-            var spawn = ServiceLocator.Resolve<ISpawnService>();
-            if (spawn != null) spawn.Despawn(_ghost); else Destroy(_ghost);
+            Destroy(_ghost); // fantasma local (ver SpawnGhost): destruir local, no via ISpawnService.
             _ghost = null;
         }
         _bodyCharacter = null;

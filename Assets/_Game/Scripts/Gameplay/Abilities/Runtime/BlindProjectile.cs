@@ -38,9 +38,9 @@ public class BlindProjectile : MonoBehaviour, IWallDestructible
     void FixedUpdate()
     {
         if (!_initialized) return;
-        Vector2 delta = _dir * (_speed * Time.fixedDeltaTime);
-        _rb.MovePosition(_rb.position + delta);
-        _traveled += delta.magnitude;
+        // Movimiento por velocidad (ver Projectile.cs): MovePosition era lento con la fisica de Fusion.
+        _rb.linearVelocity = _dir * _speed;
+        _traveled += _speed * Time.fixedDeltaTime;
         if (_traveled >= _maxRange) NetDespawn.Despawn(gameObject);
     }
 

@@ -44,9 +44,12 @@ public class Projectile : MonoBehaviour, IWallDestructible
     void FixedUpdate()
     {
         if (!_initialized) return;
-        Vector2 step = _direction * (_speed * Time.fixedDeltaTime);
-        _rb.MovePosition(_rb.position + step);
-        _traveled += step.magnitude;
+        // Movimiento por VELOCIDAD (no MovePosition): con la fisica 2D simulada por Fusion en el tick
+        // (RunnerSimulatePhysics2D), un MovePosition entre ticks se sobreescribe -> el proyectil avanzaba
+        // mas lento. La velocidad la integra Physics2D.Simulate por Runner.DeltaTime (y es el uso correcto
+        // de NetworkRigidbody2D). En Solo, la fisica normal de Unity tambien la integra.
+        _rb.linearVelocity = _direction * _speed;
+        _traveled += _speed * Time.fixedDeltaTime;
         if (_traveled >= _maxRange)
             NetDespawn.Despawn(gameObject);
     }

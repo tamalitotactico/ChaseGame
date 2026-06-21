@@ -18,6 +18,10 @@ public class BlindedEffect : StatusEffect
     public override int   VisualPriority  => 12;
     public override string IconId         => "blind";
 
+    /// <summary>Fraccion de vision [0..1]. Expuesto para replicar la magnitud al cliente (la vision
+    /// se renderiza por-cliente, asi que el jugador local cegado debe reducir su propia FoV).</summary>
+    public float FovMultiplier => _fovMultiplier;
+
     /// <param name="duration">Duracion en segundos.</param>
     /// <param name="fovMultiplier">Fraccion del radio de vision [0..1]. 0.4 = 40% de la vision.</param>
     public BlindedEffect(float duration, float fovMultiplier)

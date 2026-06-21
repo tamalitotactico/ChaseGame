@@ -48,11 +48,19 @@ public class RaiseWallPlaceable : Placeable
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
 
         _sr = GetComponent<SpriteRenderer>();
+        var size = new Vector2(Mathf.Max(0.1f, _length), _width);
         if (_sr != null)
         {
             _sr.drawMode = SpriteDrawMode.Sliced;
-            _sr.size     = new Vector2(Mathf.Max(0.1f, _length), _width);
+            _sr.size     = size;
         }
+
+#if FUSION2
+        // En red, replicar la geometria calculada (pos/rot/size) a los clientes; sin esto el cliente
+        // ve el prefab base ("un punto"). Inerte en Solo (Object null) -> el size de arriba ya basta.
+        var netVis = GetComponent<NetworkedPlaceableVisual>();
+        if (netVis != null) netVis.HostSet(mid, angle, size);
+#endif
     }
 
     // Raycast en 8 direcciones y retorna la pareja con distancia total minima.

@@ -56,7 +56,8 @@ public class EmoteBubblePresenter : MonoBehaviour
         if (data != null && data.sound != null && target != null)
         {
             bool ownEmote = IsLocalSource(e.Source);
-            ServiceLocator.Resolve<IAudioService>()?.PlayAttached(data.sound, target, 1f, spatial: !ownEmote);
+            // steepFalloff: el emote de OTROS cae mas rapido con la distancia (a mas lejos, mas drastico).
+            ServiceLocator.Resolve<IAudioService>()?.PlayAttached(data.sound, target, 1f, spatial: !ownEmote, steepFalloff: !ownEmote);
         }
     }
 

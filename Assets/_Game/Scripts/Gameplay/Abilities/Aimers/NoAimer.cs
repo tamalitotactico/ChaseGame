@@ -5,7 +5,7 @@
 /// </summary>
 public sealed class NoAimer : Aimer
 {
-    public override void Tick(in BrainIntent _) { }
+    public override void Tick(in BrainIntent _, float dt) { }
 
     public override AimResult GetResult() => new AimResult
     {

@@ -13,7 +13,7 @@ public sealed class AllyTargetAimer : Aimer
 
     public AllyTargetAimer(float range) { _range = Mathf.Max(0.1f, range); }
 
-    public override void Tick(in BrainIntent intent)
+    public override void Tick(in BrainIntent intent, float dt)
     {
         Vector2 point = Ctx.OwnerPosition;
         Vector2 input = intent.AimInput.sqrMagnitude > 0.01f ? intent.AimInput

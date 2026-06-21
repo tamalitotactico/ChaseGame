@@ -250,4 +250,99 @@ public class StatusEffectController : MonoBehaviour
         if (_char == null || _char.Motor == null) return;
         _char.Motor.SpeedMultiplier = CanMove ? AggregatedSpeedModifier : 0f;
     }
+
+    // ===== Replicacion de red (Hito 4) =====
+    // El host construye una MASCARA de bits con los tipos de efecto activos (GetActiveTypeMask) y la
+    // replica via [Networked]. El cliente la consume con SyncFromMask, reconstruyendo efectos VISUALES
+    // (duracion gigante; el host controla el alta/baja por la mascara). Esto reusa los eventos
+    // OnEffectApplied/Removed -> StatusIconDisplay (iconos) y CharacterVisuals (tint/stealth/VFX)
+    // funcionan en el cliente SIN cambios. Seguro: en el cliente el motor es network-driven, asi que
+    // SpeedModifier/ForceMoveInput/Blocks* (que solo lee el host en FixedUpdateNetwork) no afectan.
+    //
+    // ORDEN ESTABLE = indice de bit. El mismo codigo corre en host y cliente -> mismo orden.
+    static readonly System.Type[] _netTypes =
+    {
+        typeof(StunnedEffect), typeof(SlowedEffect), typeof(FearedEffect), typeof(HastedEffect),
+        typeof(CharmedEffect), typeof(BlindedEffect), typeof(CamouflageEffect), typeof(InvisibleEffect),
+        typeof(CCImmunityEffect), typeof(TrueFormEffect),
+    };
+
+    // Factories para reconstruir efecto VISUAL en el cliente (params no importan para iconos/tint:
+    // esos son constantes por tipo, salvo TrueForm cuyo tint usamos aproximado).
+    static readonly System.Func<StatusEffect>[] _netMake =
+    {
+        () => new StunnedEffect(9999f),
+        () => new SlowedEffect(9999f),
+        () => new FearedEffect(9999f, Vector2.right),
+        () => new HastedEffect(9999f),
+        () => new CharmedEffect(9999f, Vector2.zero),
+        () => new BlindedEffect(9999f, 1f),
+        () => new CamouflageEffect(9999f, 1f, 4f),
+        () => new InvisibleEffect(9999f),
+        () => new CCImmunityEffect(9999f),
+        () => new TrueFormEffect(9999f, 1f, new Color(1f, 0.4f, 0.2f, 0.5f)),
+    };
+
+    readonly Dictionary<int, StatusEffect> _netApplied = new();
+    int _lastNetMask;
+
+    const int BlindBit = 5; // indice de BlindedEffect en _netTypes (mantener en sync con el array)
+
+    /// <summary>HOST: multiplicador de FOV del blind activo (1 = sin blind). Para replicar la magnitud.</summary>
+    public float GetBlindMultiplier()
+    {
+        for (int i = 0; i < _active.Count; i++)
+            if (_active[i] is BlindedEffect b) return b.FovMultiplier;
+        return 1f;
+    }
+
+    /// <summary>HOST: mascara de bits de los tipos de efecto activos, para replicar.</summary>
+    public int GetActiveTypeMask()
+    {
+        int mask = 0;
+        for (int i = 0; i < _active.Count; i++)
+        {
+            var t = _active[i].GetType();
+            for (int b = 0; b < _netTypes.Length; b++)
+                if (_netTypes[b] == t) { mask |= (1 << b); break; }
+        }
+        return mask;
+    }
+
+    /// <summary>CLIENTE: reconstruye/retira efectos visuales segun la mascara replicada del host.
+    /// Idempotente: solo actua en los bits que cambiaron. blindMult = magnitud real del blind (para que
+    /// el jugador local cegado reduzca su FOV; el resto de magnitudes no afectan la vista del cliente).</summary>
+    public void SyncFromMask(int mask, float blindMult = 1f)
+    {
+        if (mask == _lastNetMask) return;
+
+        for (int b = 0; b < _netTypes.Length; b++)
+        {
+            int flag = 1 << b;
+            bool want = (mask & flag) != 0;
+            bool have = _netApplied.ContainsKey(b);
+
+            if (want && !have)
+            {
+                var e = (b == BlindBit) ? new BlindedEffect(9999f, blindMult) : _netMake[b]();
+                _active.Add(e);
+                e.OnApply(_char);
+                OnEffectApplied?.Invoke(e);
+                EventBus.Publish(new StatusEffectAppliedEvent { Character = _char, Effect = e });
+                _netApplied[b] = e;
+            }
+            else if (!want && have)
+            {
+                var e = _netApplied[b];
+                _netApplied.Remove(b);
+                _active.Remove(e);
+                e.OnRemove(_char);
+                OnEffectRemoved?.Invoke(e);
+                EventBus.Publish(new StatusEffectRemovedEvent { Character = _char, Effect = e });
+            }
+        }
+
+        RefreshMotor();
+        _lastNetMask = mask;
+    }
 }

@@ -29,7 +29,7 @@ public sealed class AreaAimer : Aimer
         _targetWorld = Ctx.OwnerPosition;
     }
 
-    public override void Tick(in BrainIntent intent)
+    public override void Tick(in BrainIntent intent, float dt)
     {
         Vector2 offset = intent.AimInput.sqrMagnitude > 0.01f
             ? intent.AimInput

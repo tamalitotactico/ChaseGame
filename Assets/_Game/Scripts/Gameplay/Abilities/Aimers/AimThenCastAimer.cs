@@ -56,7 +56,7 @@ public sealed class AimThenCastAimer : Aimer
         _elapsed         = 0f;
     }
 
-    public override void Tick(in BrainIntent intent)
+    public override void Tick(in BrainIntent intent, float dt)
     {
         if (_phase == Phase.Aim)
         {
@@ -78,7 +78,7 @@ public sealed class AimThenCastAimer : Aimer
         }
         else
         {
-            _elapsed += Time.deltaTime;
+            _elapsed += dt;
             // Mantener al owner inmovil durante la canalizacion
             if (!IsComplete && Ctx.Owner != null && Ctx.Owner.Motor != null)
                 Ctx.Owner.Motor.Stop();

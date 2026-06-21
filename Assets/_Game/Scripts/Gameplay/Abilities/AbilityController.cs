@@ -115,11 +115,11 @@ public class AbilityController : MonoBehaviour
     /// PushCooldownForDisplay). Llamado cada frame en el cliente local con el ultimo intent cacheado
     /// del PlayerBrain. Requiere _previewOnly (no ejecuta nada).
     /// </summary>
-    public void DriveAimPreview(in BrainIntent intent)
+    public void DriveAimPreview(in BrainIntent intent, float dt)
     {
         if (!_previewOnly || _runtime == null) return;
         if (_activeAimer == null) TryStartActivation(in intent);
-        else                      DriveAim(in intent);
+        else                      DriveAim(in intent, dt);
     }
 
     /// <summary>
@@ -169,7 +169,7 @@ public class AbilityController : MonoBehaviour
         if (_activeAimer == null)
             TryStartActivation(in intent);
         else
-            DriveAim(in intent);
+            DriveAim(in intent, dt);
     }
 
     void TryStartActivation(in BrainIntent intent)
@@ -205,9 +205,9 @@ public class AbilityController : MonoBehaviour
             ServiceLocator.Resolve<IAudioService>()?.PlayAttached(aimStartCue, _character.transform);
     }
 
-    void DriveAim(in BrainIntent intent)
+    void DriveAim(in BrainIntent intent, float dt)
     {
-        _activeAimer.Tick(in intent);
+        _activeAimer.Tick(in intent, dt);
 
         // Detectar transicion Aim → Cast para disparar OnCastingStarted/Tick/Stopped.
         bool nowCasting = _activeAimer.IsCasting;

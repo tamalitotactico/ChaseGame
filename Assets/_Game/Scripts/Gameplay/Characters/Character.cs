@@ -38,6 +38,23 @@ public abstract class Character : MonoBehaviour, IDamageable
     public IAuthorityContext Authority { get; private set; } = LocalAuthority.Instance;
     public Vector2 FacingDirection { get; private set; } = Vector2.right;
 
+    /// <summary>True si este Character es un proxy de red (cliente sin state authority): su FSM esta
+    /// congelada y la animacion debe leerse del estado replicado. False en host/solo. La lee CharacterAnimator.</summary>
+    public bool AnimFromNetwork =>
+#if FUSION2
+        IsNetworked && Object != null && !Object.HasStateAuthority;
+#else
+        false;
+#endif
+
+    /// <summary>Indice de AnimSet replicado desde el host (valido solo si AnimFromNetwork).</summary>
+    public int NetworkedAnimSet =>
+#if FUSION2
+        NetAnimSet;
+#else
+        0;
+#endif
+
     public CharacterStateMachine States { get; private set; }
     public StatusEffectController StatusEffects { get; private set; }
 
@@ -182,19 +199,39 @@ public abstract class Character : MonoBehaviour, IDamageable
     // El host (StateAuthority) escribe al final de cada FixedUpdateNetwork; los clientes lo leen por
     // POLLING en Render() (Fusion 2 no tiene el callback OnChanged/Changed<T> de Fusion 1; se usa
     // ChangeDetector o, como aqui, lectura idempotente cada frame de presentacion).
-    [Networked] int  SyncedHealth   { get; set; }
-    [Networked] bool SyncedIsDowned { get; set; }
+    [Networked] int   SyncedHealth        { get; set; }
+    [Networked] bool  SyncedIsDowned      { get; set; }
+    [Networked] float SyncedReviveProgress { get; set; } // 0..1, para la barra de revive en el cliente
 
     // Cooldowns replicados para el HUD del cliente local (segundos restantes, 0..Data.cooldown).
     [Networked] float Cooldown0 { get; set; }
     [Networked] float Cooldown1 { get; set; }
     [Networked] float Cooldown2 { get; set; }
 
+    // Animacion + efectos de estado replicados (para que el cliente, con la FSM congelada y
+    // StatusEffectController vacio, vea animaciones e iconos/tint). Host escribe en FixedUpdateNetwork.
+    [Networked] byte    NetAnimSet    { get; set; } // indice de AnimSet (CharacterAnimator.SetIndexFor)
+    [Networked] int     NetStatusMask { get; set; } // mascara de tipos de efecto activos
+    [Networked] float   NetBlindMult  { get; set; } // magnitud del blind (1 = sin blind) para FOV local
+    [Networked] Vector2 NetFacing     { get; set; } // direccion de mirada (octante de animacion) replicada
+
+    /// <summary>HOST: escribe la animacion (set de la FSM) y la mascara de efectos activos para que
+    /// los clientes (FSM congelada, StatusEffectController vacio) reproduzcan animaciones e iconos/tint.</summary>
+    void WriteNetVisualState()
+    {
+        NetAnimSet    = (byte)CharacterAnimator.SetIndexFor(States != null ? States.Current : null);
+        NetStatusMask = StatusEffects != null ? StatusEffects.GetActiveTypeMask() : 0;
+        NetBlindMult  = StatusEffects != null ? StatusEffects.GetBlindMultiplier() : 1f;
+        NetFacing     = FacingDirection;
+        SyncedReviveProgress = (Revivable != null && Revivable.IsDowned) ? Revivable.ReviveProgress : 0f;
+    }
+
     /// <summary>Aplica el estado replicado en clientes no-host. Idempotente: NetworkSync ignora
     /// valores sin cambio y solo dispara eventos en transiciones reales.</summary>
     void ApplySyncedState()
     {
         Health?.NetworkSync(SyncedHealth);
+        StatusEffects?.SyncFromMask(NetStatusMask, NetBlindMult);
 
         bool nowDowned = SyncedIsDowned;
         bool wasDowned = IsDowned; // lee Revivable.IsDowned
@@ -207,9 +244,24 @@ public abstract class Character : MonoBehaviour, IDamageable
         }
         else if (!nowDowned && wasDowned)
         {
-            // Revive sincronizado desde el host.
+            // Revive sincronizado desde el host. CRITICO: limpiar el estado downed del Revivable, o
+            // wasDowned seguiria true y este branch se re-dispararia cada frame (particulas masivas de
+            // revive + corazon roto permanente). El heal real llega via SyncedHealth.
+            Revivable.NetworkClearDowned();
             States.ChangeState(new IdleState());
             EventBus.Publish(new CharacterRevivedEvent { Character = this });
+        }
+
+        // Barra de progreso de revive en el cliente (el host tickea el revive; aqui lo reflejamos).
+        if (nowDowned && Revivable != null)
+        {
+            EventBus.Publish(new ReviveProgressChangedEvent
+            {
+                Character         = this,
+                Progress          = SyncedReviveProgress,
+                BleedOutRemaining = Revivable.BleedOutDuration, // bleed-out desactivado: full
+                HasReviver        = SyncedReviveProgress > 0.001f,
+            });
         }
     }
 
@@ -228,6 +280,13 @@ public abstract class Character : MonoBehaviour, IDamageable
             var list = Team == CharacterTeam.Hunter ? gm.Hunters : gm.Preys;
             if (!list.Contains(this)) list.Add(this);
         }
+
+        // FoW: TODOS los characters necesitan CharacterFogVisibility para que la niebla del viewer
+        // local los oculte. En Solo lo agrega FogOfWarManager via CharacterSpawnedEvent (que GameManager
+        // publica para todos); en red ese evento solo se publica para el jugador local, asi que aqui lo
+        // aseguramos para todos (bots y remotos incluidos) o quedarian siempre visibles en el cliente.
+        if (GetComponent<CharacterFogVisibility>() == null)
+            gameObject.AddComponent<CharacterFogVisibility>();
 
         // Bots: solo el host (StateAuthority) corre la AI. ConfigureBot agrega BotBrain + AI.
         if (Object.HasStateAuthority && NetworkIsBot)
@@ -265,6 +324,7 @@ public abstract class Character : MonoBehaviour, IDamageable
             States.Tick(dt);
             SyncedHealth   = Health != null ? Health.CurrentHealth : 0;
             SyncedIsDowned = IsDowned;
+            WriteNetVisualState();
             return;
         }
 
@@ -283,6 +343,10 @@ public abstract class Character : MonoBehaviour, IDamageable
             if (forced.HasValue) moveInput = forced.Value;
         }
 
+        // Facing autoritativo desde el input de movimiento (se replica via NetFacing): el cliente NO
+        // puede derivarlo de la velocidad del RB proxy (es ~0), por eso la animacion miraba a la derecha.
+        if (moveInput.sqrMagnitude > 0.01f) FacingDirection = moveInput.normalized;
+
         Motor.SetMoveInput(moveInput);
         Motor.NetworkTick(dt);
         Abilities.Tick(in intent, dt);
@@ -290,7 +354,7 @@ public abstract class Character : MonoBehaviour, IDamageable
             Combat.Tick(in intent, dt);
         States.Tick(dt);
 
-        // Replicar estado de salud/downed + cooldowns al final del tick autoritativo.
+        // Replicar estado de salud/downed + cooldowns + animacion/efectos al final del tick autoritativo.
         SyncedHealth   = Health != null ? Health.CurrentHealth : 0;
         SyncedIsDowned = IsDowned;
         var abs = Abilities?.Abilities;
@@ -300,6 +364,7 @@ public abstract class Character : MonoBehaviour, IDamageable
             Cooldown1 = abs.Length > 1 && abs[1] != null ? abs[1].CooldownRemaining : 0f;
             Cooldown2 = abs.Length > 2 && abs[2] != null ? abs[2].CooldownRemaining : 0f;
         }
+        WriteNetVisualState();
     }
 
     /// <summary>
@@ -313,14 +378,21 @@ public abstract class Character : MonoBehaviour, IDamageable
     {
         if (!IsNetworked) return;
 
-        if (Motor != null)
+        if (Object.HasStateAuthority)
         {
-            Vector2 v = Motor.Velocity;
-            if (v.sqrMagnitude > 0.01f) FacingDirection = v.normalized;
+            // Host: facing desde la velocidad real del RB (refina el seteado en FixedUpdateNetwork).
+            if (Motor != null)
+            {
+                Vector2 v = Motor.Velocity;
+                if (v.sqrMagnitude > 0.01f) FacingDirection = v.normalized;
+            }
         }
-
-        if (!Object.HasStateAuthority)
+        else
         {
+            // Cliente: facing REPLICADO (la velocidad del RB proxy es ~0 -> la animacion miraba siempre
+            // a la derecha). NetFacing lo escribe el host desde el input de movimiento.
+            if (NetFacing.sqrMagnitude > 0.01f) FacingDirection = NetFacing;
+
             ApplySyncedState();
 
             if (Object.HasInputAuthority && Abilities != null)
@@ -331,8 +403,9 @@ public abstract class Character : MonoBehaviour, IDamageable
 
                 // Preview local de aim: reusa el ultimo intent del PlayerBrain (NO recapturar: consume
                 // edges que necesita la replicacion de input). Dibuja el indicador sin ejecutar.
+                // dt = Time.deltaTime: Render corre por-frame, asi la barra de channeling avanza en tiempo real.
                 var pb = PlayerBrain.Local;
-                if (pb != null) Abilities.DriveAimPreview(pb.LastIntent);
+                if (pb != null) Abilities.DriveAimPreview(pb.LastIntent, Time.deltaTime);
             }
         }
     }

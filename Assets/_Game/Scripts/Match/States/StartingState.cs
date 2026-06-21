@@ -20,6 +20,7 @@ public class StartingState : IMatchState
     {
         _countdown -= dt;
         int secondsLeft = Mathf.Max(0, Mathf.CeilToInt(_countdown));
+        gm.CountdownDisplay = secondsLeft; // expuesto para replicacion host->cliente (timer sync)
         if (secondsLeft != _lastSecondPublished)
         {
             _lastSecondPublished = secondsLeft;

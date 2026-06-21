@@ -147,6 +147,20 @@ public class RevivableComponent : MonoBehaviour
     /// muerte real esta desactivada y los downed son invulnerables.</summary>
     public void KillFromFinish() { }
 
+    /// <summary>
+    /// CLIENTE de red: limpia el estado downed SIN correr la logica de revive (heal/eventos), que es
+    /// host-autoritativa y llega replicada (SyncedHealth + CharacterRevivedEvent). Restaura colliders.
+    /// Sin esto, en el cliente IsDowned quedaba en true tras revivir -> Character.ApplySyncedState
+    /// re-disparaba el revive cada frame (particulas masivas) y el corazon quedaba roto.
+    /// </summary>
+    public void NetworkClearDowned()
+    {
+        IsDowned          = false;
+        ReviveProgress    = 0f;
+        BleedOutRemaining = 0f;
+        SetCollidersBlocking(true);
+    }
+
     /// <summary>blocking=true: colliders solidos (colisionan/estorban). blocking=false: trigger
     /// (no estorban el paso pero siguen detectandose). El revive NO depende del collider (usa
     /// proximidad), asi que reanimar a un caido sigue funcionando con el collider en trigger.</summary>

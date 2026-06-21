@@ -73,7 +73,10 @@ public abstract class Aimer
         OnBegin();
     }
 
-    public abstract void Tick(in BrainIntent intent);
+    /// <summary>Tick del aimer. dt es el delta de tiempo REAL del caller (Runner.DeltaTime en el tick
+    /// de red, Time.deltaTime en Solo/preview). Las canalizaciones DEBEN usar este dt, no Time.deltaTime
+    /// directo: en FixedUpdateNetwork Time.deltaTime no corresponde a la cadencia del tick -> timing roto.</summary>
+    public abstract void Tick(in BrainIntent intent, float dt);
 
     /// <summary>
     /// Llamado en el frame en que el slot pasa a Released. El Aimer decide que hacer.

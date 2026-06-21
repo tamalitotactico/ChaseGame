@@ -71,9 +71,10 @@ public class FearProjectile : MonoBehaviour, IWallDestructible
             }
         }
 
-        Vector2 delta = _direction * (_speed * dt);
-        _rb.MovePosition(_rb.position + delta);
-        _traveled += delta.magnitude;
+        // Movimiento por velocidad (ver Projectile.cs): MovePosition se sobreescribia entre ticks de
+        // Fusion -> avanzaba lento. La velocidad se actualiza cada step para reflejar el homing.
+        _rb.linearVelocity = _direction * _speed;
+        _traveled += _speed * dt;
         if (_traveled >= _maxRange)
             NetDespawn.Despawn(gameObject);
     }

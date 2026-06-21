@@ -51,7 +51,7 @@ public sealed class AreaThenCastAimer : Aimer
         _elapsed     = 0f;
     }
 
-    public override void Tick(in BrainIntent intent)
+    public override void Tick(in BrainIntent intent, float dt)
     {
         if (_phase == Phase.Aim)
         {
@@ -61,7 +61,7 @@ public sealed class AreaThenCastAimer : Aimer
         }
         else
         {
-            _elapsed += Time.deltaTime;
+            _elapsed += dt;
             if (!IsComplete && Ctx.Owner != null && Ctx.Owner.Motor != null)
                 Ctx.Owner.Motor.Stop();
         }

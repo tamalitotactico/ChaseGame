@@ -30,6 +30,12 @@ public sealed class NetworkBootstrap : MonoBehaviour
     public NetworkRunner Runner { get; private set; }
     public bool IsRunning => Runner != null && Runner.IsRunning;
 
+    // El runner vive en su PROPIO GameObject (no en el del GameManager). Fusion marca el runner como
+    // DontDestroyOnLoad al iniciar; si estuviera en el GameObject del GameManager, lo arrastraria a DDOL
+    // y el GameManager (+sus personajes) sobreviviria al cambio de escena -> duplicacion al re-entrar a
+    // una partida. Con un GO dedicado, GameManager se destruye normal y su OnDestroy llama Shutdown().
+    GameObject _runnerGO;
+
     /// <summary>Arranca el runner. gameMode: Host/Client/AutoHostOrClient/Single.</summary>
     public async Task StartNetwork(GameMode gameMode, string sessionName = DefaultRoom)
     {
@@ -45,19 +51,19 @@ public sealed class NetworkBootstrap : MonoBehaviour
                 settings.AppSettings.FixedRegion = FixedRegion;
         }
 
-        Runner = gameObject.AddComponent<NetworkRunner>();
+        _runnerGO = new GameObject("FusionRunner");
+        Runner = _runnerGO.AddComponent<NetworkRunner>();
         Runner.ProvideInput = true; // este peer aporta input local
 
         // Recolector de input local (PlayerBrain -> NetworkInputData).
-        var collector = gameObject.GetComponent<FusionInputCollector>() ?? gameObject.AddComponent<FusionInputCollector>();
+        var collector = _runnerGO.AddComponent<FusionInputCollector>();
         Runner.AddCallbacks(collector);
 
-        var sceneManager = gameObject.GetComponent<NetworkSceneManagerDefault>() ?? gameObject.AddComponent<NetworkSceneManagerDefault>();
+        var sceneManager = _runnerGO.AddComponent<NetworkSceneManagerDefault>();
 
         // Simulacion de fisica 2D dentro del tick de Fusion (necesaria para colision de muros con
         // NetworkRigidbody2D). Pone Physics2D en modo Script mientras el runner corre.
-        if (gameObject.GetComponent<RunnerSimulatePhysics2D>() == null)
-            gameObject.AddComponent<RunnerSimulatePhysics2D>();
+        _runnerGO.AddComponent<RunnerSimulatePhysics2D>();
 
         var args = new StartGameArgs
         {
@@ -72,6 +78,20 @@ public sealed class NetworkBootstrap : MonoBehaviour
             Debug.LogError($"[NetworkBootstrap] StartGame fallo: {result.ShutdownReason}");
         else
             Debug.Log($"[NetworkBootstrap] Runner iniciado: mode={gameMode} room={sessionName} isServer={Runner.IsServer}");
+    }
+
+    /// <summary>Apaga el runner y despawnea todos los NetworkObjects. Lo llama GameManager.OnDestroy al
+    /// salir de la partida (volver al hub) para que la sesion/objetos no persistan a la siguiente partida
+    /// (evita la duplicacion de personajes). Shutdown(true) destruye el GameObject del runner.</summary>
+    public void Shutdown()
+    {
+        if (Runner != null)
+        {
+            Runner.Shutdown(destroyGameObject: true);
+            Runner = null;
+        }
+        // Por si Shutdown no alcanzo a destruir el GO (estado parcial), limpiarlo.
+        if (_runnerGO != null) { Object.Destroy(_runnerGO); _runnerGO = null; }
     }
 }
 #endif

@@ -17,9 +17,12 @@ public static class NetDespawn
         if (go == null) return;
 #if FUSION2
         var no = go.GetComponent<NetworkObject>();
-        if (no != null && no.IsValid && no.HasStateAuthority && no.Runner != null)
+        if (no != null && no.IsValid)
         {
-            no.Runner.Despawn(no);
+            // Objeto networkeado: SOLO el host (StateAuthority) lo despawnea; replica a los clientes.
+            // Un proxy cliente NO debe Object.Destroy (destruiria el objeto replicado localmente ->
+            // desync). Si no es authority, no hace nada y espera el despawn del host.
+            if (no.HasStateAuthority && no.Runner != null) no.Runner.Despawn(no);
             return;
         }
 #endif

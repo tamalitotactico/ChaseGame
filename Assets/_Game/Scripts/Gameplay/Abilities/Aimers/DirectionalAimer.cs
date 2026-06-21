@@ -30,7 +30,7 @@ public sealed class DirectionalAimer : Aimer
         _currentlyAiming = false;
     }
 
-    public override void Tick(in BrainIntent intent)
+    public override void Tick(in BrainIntent intent, float dt)
     {
         Vector2 aim  = intent.AimInput;
         Vector2 move = intent.MoveInput;

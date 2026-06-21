@@ -83,13 +83,22 @@ public class CharacterAnimator : MonoBehaviour
     {
         if (animator == null || _char == null) return;
 
-        // SET segun el estado logico. Solo recomputa el mapeo cuando cambia la instancia
-        // de estado (no hace type-dispatch cada frame en regimen estable).
-        var logic = _char.States != null ? _char.States.Current : null;
-        if (!ReferenceEquals(logic, _lastLogicState))
+        // En un proxy de red (cliente, sin state authority) la FSM esta congelada: el SET
+        // viene replicado desde el host (NetworkedAnimSet). En host/solo se deriva de la FSM local.
+        if (_char.AnimFromNetwork)
         {
-            _lastLogicState = logic;
-            _set = MapSet(logic);
+            _set = (AnimSet)Mathf.Clamp(_char.NetworkedAnimSet, 0, SetPrefix.Length - 1);
+        }
+        else
+        {
+            // SET segun el estado logico. Solo recomputa el mapeo cuando cambia la instancia
+            // de estado (no hace type-dispatch cada frame en regimen estable).
+            var logic = _char.States != null ? _char.States.Current : null;
+            if (!ReferenceEquals(logic, _lastLogicState))
+            {
+                _lastLogicState = logic;
+                _set = MapSet(logic);
+            }
         }
 
         int oct  = DirToOctant(_char.FacingDirection);
@@ -100,6 +109,10 @@ public class CharacterAnimator : MonoBehaviour
             animator.Play(hash);
         }
     }
+
+    /// <summary>Indice del AnimSet (0..N) para un estado logico. Lo usa el host para replicar la
+    /// animacion a los clientes (Character escribe (byte)SetIndexFor(States.Current)).</summary>
+    public static int SetIndexFor(ICharacterState s) => (int)MapSet(s);
 
     static AnimSet MapSet(ICharacterState s)
     {

@@ -12,7 +12,7 @@ public sealed class TapAimer : Aimer
     public override bool IsCasting     => false;
     public override bool IsCancellable => true;
 
-    public override void Tick(in BrainIntent intent) { }
+    public override void Tick(in BrainIntent intent, float dt) { }
 
     public override ReleaseDecision HandleRelease(in BrainIntent intent)
         => ReleaseDecision.Fire;

@@ -121,7 +121,7 @@ public class AudioManager : MonoBehaviour, IAudioService
         return new AudioHandle { Source = src };
     }
 
-    public AudioHandle PlayAttached(AudioClip clip, Transform follow, float volume = 1f, bool spatial = true)
+    public AudioHandle PlayAttached(AudioClip clip, Transform follow, float volume = 1f, bool spatial = true, bool steepFalloff = false)
     {
         if (clip == null || follow == null) return AudioHandle.Null;
 
@@ -142,10 +142,20 @@ public class AudioManager : MonoBehaviour, IAudioService
             // Espacial: atenua por distancia, pero con spread alto para NO panear duro a un
             // oido (al caminar el listener-camara se desfasa del emisor y sonaba todo L/R).
             src.spatialBlend = 1f;
-            src.rolloffMode  = AudioRolloffMode.Linear;
             src.minDistance  = clipMinDistance;
             src.maxDistance  = clipMaxDistance;
             src.spread       = clipSpread;
+            if (steepFalloff)
+            {
+                // Curva CUSTOM convexa: cae mas rapido cuanto mas lejos (emotes). Setear DESPUES de
+                // min/maxDistance (la x de la curva esta normalizada a maxDistance).
+                src.rolloffMode = AudioRolloffMode.Custom;
+                src.SetCustomCurve(AudioSourceCurveType.CustomRolloff, SteepRolloffCurve());
+            }
+            else
+            {
+                src.rolloffMode = AudioRolloffMode.Linear;
+            }
             _attached[src]   = follow; // seguir al emisor cada frame en LateUpdate
         }
         else
@@ -158,6 +168,22 @@ public class AudioManager : MonoBehaviour, IAudioService
 
         src.Play();
         return new AudioHandle { Source = src };
+    }
+
+    // Curva de rolloff convexa (cae rapido al alejarse). x normalizada a maxDistance, y = volumen.
+    static AnimationCurve _steepRolloff;
+    static AnimationCurve SteepRolloffCurve()
+    {
+        if (_steepRolloff == null)
+        {
+            _steepRolloff = new AnimationCurve(
+                new Keyframe(0f,   1f),
+                new Keyframe(0.25f, 0.45f),
+                new Keyframe(0.5f, 0.18f),
+                new Keyframe(0.75f, 0.06f),
+                new Keyframe(1f,   0f));
+        }
+        return _steepRolloff;
     }
 
     public AudioHandle PlayGlobal(AudioCue cue)

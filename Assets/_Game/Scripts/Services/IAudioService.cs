@@ -29,7 +29,9 @@ public interface IAudioService
     /// para no panear duro al caminar). spatial=false: 2D centrado, se oye normal sin paneo
     /// (para el sonido "propio", ej. tu emote). Para emisores remotos usar spatial=true.
     /// </summary>
-    AudioHandle PlayAttached(AudioClip clip, Transform follow, float volume = 1f, bool spatial = true);
+    /// <param name="steepFalloff">Solo si spatial=true: usa una curva de rolloff CUSTOM convexa (cae mas
+    /// rapido cuanto mas lejos) en vez de la lineal. Para emotes: a mayor distancia, mas drastica la caida.</param>
+    AudioHandle PlayAttached(AudioClip clip, Transform follow, float volume = 1f, bool spatial = true, bool steepFalloff = false);
 
     /// <summary>
     /// Reproduce un AudioCue en 2D GLOBAL (spatialBlend=0): se escucha en todo el mapa al

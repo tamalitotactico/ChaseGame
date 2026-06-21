@@ -29,6 +29,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("Mapeo IndicatorShape -> prefab para los indicadores de aim del jugador local.")]
     [SerializeField] IndicatorRegistry indicatorRegistry;
 
+    [Tooltip("Prefab con NetworkObject + NetworkMatchState. El host lo spawnea en MP para replicar " +
+             "timer/fase/ganador. Dejar null en Solo (no se usa).")]
+    [SerializeField] GameObject matchStatePrefab;
+
     [Header("Spawns")]
     [SerializeField] Transform[] hunterSpawns;
     [SerializeField] Transform[] preySpawns;
@@ -55,6 +59,11 @@ public class GameManager : MonoBehaviour
     public List<Character> Preys   { get; } = new();
     public float TimeRemaining { get; set; }
     public CharacterTeam PlayerTeam => playerTeam;
+
+    // Expuestos por los match states para que el host los replique a los clientes (timer/winner sync).
+    public int          CountdownDisplay { get; set; }      // StartingState lo actualiza
+    public CharacterTeam LastWinner      { get; set; }      // EndingState lo fija
+    public string        LastWinnerReason { get; set; } = ""; // EndingState lo fija
 
     /// <summary>Registry de indicadores de aim, para que el setup local (incl. el path de red en
     /// Character.Spawned) configure el AbilityIndicatorView del jugador local.</summary>
@@ -109,6 +118,13 @@ public class GameManager : MonoBehaviour
 
     void OnDestroy()
     {
+#if FUSION2
+        // Apagar el runner de Fusion SIEMPRE que el GameManager que lo creo se destruya (volver al
+        // hub / cambio de escena), sin importar si seguimos siendo Instance. Si no se apaga, el runner
+        // (DDOL) y sus NetworkObjects persisten a la siguiente partida -> personajes duplicados y el
+        // jugador controlando varios. _bootstrap es campo de instancia: cada GameManager apaga el suyo.
+        if (_bootstrap != null) { _bootstrap.Shutdown(); _bootstrap = null; }
+#endif
         // CRITICO para el loop (rematch/lobby): al recargar la escena, el Awake de la
         // NUEVA GameManager corre ANTES de este OnDestroy y ya re-registro servicios y
         // re-suscribio eventos. Si limpiaramos incondicionalmente, borrariamos ese estado
@@ -209,8 +225,70 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+#if FUSION2
+        // En MP, el CLIENTE no corre su propia maquina de partida (timer/victoria): espeja el estado
+        // host-autoritativo (NetworkMatchState). El host corre States normal y lo replica al final.
+        if (IsNetworkedClient)
+        {
+            MirrorNetworkedMatch();
+            return;
+        }
+#endif
         States.Tick(Time.deltaTime);
+#if FUSION2
+        WriteNetMatchState();
+#endif
     }
+
+#if FUSION2
+    bool IsNetworkedClient =>
+        _bootstrap != null && _bootstrap.IsRunning && _bootstrap.Runner != null && !_bootstrap.Runner.IsServer;
+
+    int _mirrorPhase = -1;
+    int _mirrorCountdown = int.MinValue;
+
+    /// <summary>HOST: vuelca el estado de la partida (fase/timer/countdown/winner) al objeto replicado.</summary>
+    void WriteNetMatchState()
+    {
+        var ms = NetworkMatchState.Instance;
+        if (ms == null || ms.Object == null || !ms.Object.HasStateAuthority) return;
+        int phase = States.Current is EndingState ? 2 : (States.Current is PlayingState ? 1 : 0);
+        ms.HostWrite(phase, TimeRemaining, CountdownDisplay, (int)LastWinner);
+    }
+
+    /// <summary>CLIENTE: espeja la partida del host. Cambia de estado (para disparar Enter: musica +
+    /// MatchStarted/Ended) y publica los eventos de timer/countdown desde los valores replicados.</summary>
+    void MirrorNetworkedMatch()
+    {
+        var ms = NetworkMatchState.Instance;
+        if (ms == null) return;
+
+        TimeRemaining = ms.TimeRemaining;
+        int phase = ms.Phase;
+
+        if (phase != _mirrorPhase)
+        {
+            _mirrorPhase = phase;
+            if (phase == 0 && !(States.Current is StartingState)) States.ChangeState(new StartingState());
+            else if (phase == 1 && !(States.Current is PlayingState)) States.ChangeState(new PlayingState());
+            else if (phase == 2 && !(States.Current is EndingState))
+                States.ChangeState(new EndingState((CharacterTeam)ms.WinnerTeam, "Network"));
+        }
+
+        if (phase == 0)
+        {
+            if (ms.CountdownSecond != _mirrorCountdown)
+            {
+                _mirrorCountdown = ms.CountdownSecond;
+                EventBus.Publish(new CountdownTickEvent { SecondsLeft = ms.CountdownSecond });
+            }
+        }
+        else if (phase == 1)
+        {
+            EventBus.Publish(new MatchTimerTickEvent { SecondsRemaining = Mathf.Max(0f, TimeRemaining) });
+        }
+    }
+#endif
 
     /// <summary>Spawna humano local + bots (y, con Fusion, humanos remotos) segun la composicion
     /// de la IMatchSession. La sesion decide que es cada slot; este metodo no sabe de red.</summary>
@@ -369,12 +447,24 @@ public class GameManager : MonoBehaviour
         CharacterTeam team = isLocal ? playerTeam : Opposite(playerTeam);
         SpawnNetworkedCharacter(runner, team, player, isBot: false);
 
-        // Llenar con bots una sola vez, tras el primer join (el host).
+        // Llenar con bots una sola vez, tras el primer join (el host) + spawnear el objeto de match-state.
         if (!_netBotsFilled)
         {
             _netBotsFilled = true;
             FillBots(runner);
+            SpawnMatchStateObject(runner);
         }
+    }
+
+    /// <summary>Host: spawnea el NetworkMatchState (timer/fase/winner replicados). Una vez por partida.</summary>
+    void SpawnMatchStateObject(NetworkRunner runner)
+    {
+        if (matchStatePrefab == null)
+        {
+            Debug.LogWarning("[GameManager] matchStatePrefab no asignado: timer/winner NO se sincronizaran en MP.");
+            return;
+        }
+        runner.Spawn(matchStatePrefab, Vector3.zero, Quaternion.identity);
     }
 
     void FillBots(NetworkRunner runner)
